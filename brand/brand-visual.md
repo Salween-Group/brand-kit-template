@@ -7,7 +7,7 @@
   maintained_by: [Your Name / Team]
 -->
 
-> **Purpose:** This document gives Claude the specifications needed to generate branded HTML, presentations, artifacts, and design briefs. It is not a replacement for the full brand guidelines PDF — it is a machine-readable reference optimised for AI-assisted content production.
+> **Purpose:** This document gives our tools the specifications needed to generate branded HTML, presentations, artifacts, and design briefs. It is not a replacement for the full brand guidelines PDF — it is a machine-readable reference optimised for AI-assisted content production.
 
 ---
 

@@ -16,6 +16,7 @@ Before producing any output, consult the relevant brand files:
 - **`brand/brand-context.md`** — For positioning, audience, competitors, and messaging hierarchy. Reference this when you need to understand *who* we're talking to and *why*.
 - **`brand/brand-voice.md`** — For tone, vocabulary, and writing style. Reference the "This, Not That" examples to calibrate your output. This is your primary guide for any written content.
 - **`brand/brand-visual.md`** — For colours, typography, spacing, and layout. Reference this when generating HTML, presentations, email templates, or design briefs.
+- **`reference/approved-copy-samples.md`** — For full-length examples of approved client copy. Reference these to calibrate voice, rhythm, and structure before writing any content.
 
 ## Default Behaviour
 

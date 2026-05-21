@@ -20,7 +20,7 @@ Before producing any output, consult the relevant brand files:
 
 ## Live Data Sources
 
-If fresh data is required or requested, try the Databox connector for client [Client]
+If fresh data is required or requested, try the Databox connector for client [Client Name]
 
 ## Default Behaviour
 

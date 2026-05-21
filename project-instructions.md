@@ -18,6 +18,10 @@ Before producing any output, consult the relevant brand files:
 - **`brand/brand-visual.md`** — For colours, typography, spacing, and layout. Reference this when generating HTML, presentations, email templates, or design briefs.
 - **`reference/approved-copy-samples.md`** — For full-length examples of approved client copy. Reference these to calibrate voice, rhythm, and structure before writing any content.
 
+## Live Data Sources
+
+If fresh data is required or requested, try the Databox connector for client [Client]
+
 ## Default Behaviour
 
 - Write in the brand voice defined in `brand-voice.md` unless explicitly asked to deviate.

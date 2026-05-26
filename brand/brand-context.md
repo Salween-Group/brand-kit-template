@@ -14,7 +14,7 @@
 **Headquarters:** [City, Country]
 **Founded:** [Year]
 **Company Size:** [Employees / revenue band if relevant]
-**Company Website URL:** [https://domain.com]
+**Company Website URL:** [URL]
 **Company LinkedIn Page URL:** [URL]
 
 **One-line description:**

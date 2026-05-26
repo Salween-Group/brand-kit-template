@@ -81,11 +81,11 @@ List 3–5 things that genuinely set this brand apart. Be specific — avoid gen
 
 ### Direct Competitors
 
-| Competitor        | Positioning / Claim                    | Our Advantage Against Them              |
-|-------------------|----------------------------------------|-----------------------------------------|
-| [Competitor 1]    | [How they position themselves]         | [Why we win]                            |
-| [Competitor 2]    | [How they position themselves]         | [Why we win]                            |
-| [Competitor 3]    | [How they position themselves]         | [Why we win]                            |
+| Competitor        | Website URL                  | LinkedIn Company Page URL                  | Positioning / Claim                    | Our Advantage Against Them              |
+|-------------------|------------------------------|--------------------------------------------|----------------------------------------|-----------------------------------------|
+| [Competitor 1]    | [https://competitor1.com]    | [https://linkedin.com/company/competitor1] | [How they position themselves]         | [Why we win]                            |
+| [Competitor 2]    | [https://competitor2.com]    | [https://linkedin.com/company/competitor2] | [How they position themselves]         | [Why we win]                            |
+| [Competitor 3]    | [https://competitor3.com]    | [https://linkedin.com/company/competitor3] | [How they position themselves]         | [Why we win]                            |
 
 ### Indirect Competitors / Alternatives
 

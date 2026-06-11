@@ -15,7 +15,7 @@
 
 ## LinkedIn Posts
 
-### LinkedIn Sample 1
+### LinkedIn Sample Set 1
 
 **Context:** [e.g. "Thought leadership — industry trend commentary"]
 **Published:** [Date]
@@ -27,7 +27,7 @@
 
 ---
 
-### LinkedIn Sample 2
+### LinkedIn Sample Set 2
 
 **Context:** [e.g. "Case study / client win announcement"]
 **Published:** [Date]
@@ -39,7 +39,7 @@
 
 ---
 
-### LinkedIn Sample 3
+### LinkedIn Sample Set 3
 
 **Context:** [e.g. "Event recap / takeaway post"]
 **Published:** [Date]
@@ -63,7 +63,7 @@
 
 ## Short Articles
 
-### Article Sample 1
+### Article Sample Set 1
 
 **Context:** [e.g. "Blog post — educational / how-to"]
 **Published:** [Date]
@@ -90,7 +90,7 @@
 
 ---
 
-### Article Sample 2
+### Article Sample Set 2
 
 **Context:** [e.g. "Thought leadership — opinion / perspective piece"]
 **Published:** [Date]
@@ -129,7 +129,7 @@
 
 ## Press Releases
 
-### Press Release Sample 1
+### Press Release Sample Set 1
 
 **Context:** [e.g. "Product launch announcement"]
 **Published:** [Date]
@@ -148,7 +148,7 @@
 
 ## Email Campaigns
 
-### Email Sample 1
+### Email Sample Set 1
 
 **Context:** [e.g. "Nurture sequence — problem agitation email"]
 **Published:** [Date]
@@ -165,7 +165,7 @@
 
 ## Social Media (Other Platforms)
 
-### [Platform] Sample 1
+### [Platform] Sample Set 1
 
 **Context:** [e.g. "X/Twitter — product feature highlight"]
 **Published:** [Date]

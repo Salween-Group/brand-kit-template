@@ -19,8 +19,9 @@ Before producing any output, consult the relevant brand files:
 - **`reference/approved-copy-samples.md`** — For full-length examples of approved client copy. Reference these to calibrate voice, rhythm, and structure before writing any content.
 
 ## Live Data Sources
-
-If fresh data is required or requested, try the Databox connector for client [Client Name]
+### Connector routing
+- Databox — primary source for Google Analytics (GA4), Google Ads, Google Search Console, and most social media metrics.
+- [Add your other data sources here. Note instructions like these guide tool selection, but don't override a skill's own explicit data-source steps — so where a skill already specifies its connector, that still wins.] 
 
 ## Default Behaviour
 

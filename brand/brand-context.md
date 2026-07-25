@@ -5,6 +5,11 @@
   version:       1.0
   last_updated:  YYYY-MM-DD
   maintained_by: [Your Name / Team]
+  sync:                          # Consumed by the brand-sync skill. Fill in per client.
+    stakeholders:  [Full Name One, Full Name Two, Full Name Three]   # people whose call input drives the sync
+    fathom_query:  [Client Name]                                     # Fathom meeting search term; defaults to client if omitted
+    fathom_team:   [Fathom Team Name]                                # optional; delete this line if the client has no Fathom team
+    teams_chat:    [Exact Microsoft Teams Chat Name]                 # destination chat for proposed brand-kit updates
 -->
 
 ## 1. Company Overview

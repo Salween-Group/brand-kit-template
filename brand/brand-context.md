@@ -5,6 +5,8 @@
   version:       1.0
   last_updated:  YYYY-MM-DD
   maintained_by: [Your Name / Team]
+  # Version history lives in brand/CHANGELOG.md. Never accumulate change narratives in
+  # this block — this file is loaded into every project chat, and history bloats it.
   sync:                          # Consumed by the brand-sync skill. Fill in per client.
     stakeholders:  [Full Name One, Full Name Two, Full Name Three]   # people whose call input drives the sync
     fathom_query:  [Client Name]                                     # Fathom meeting search term; defaults to client if omitted
@@ -136,6 +138,12 @@ The core messages the brand wants to land, ranked by priority.
 ## 8. Sensitive Topics & Guardrails
 
 Things Claude should avoid or handle carefully when representing this brand.
+
+> **Durable rules only.** This section is for standing guardrails that always apply.
+> Time-bound rules — embargoes, hold-until-announced wins, dates awaiting verification,
+> proof points that cannot be used *yet* — belong in `brand/live-holds.md`, where each
+> carries a scope, a lift condition and a review-by date. If a rule has an expiry, it is
+> a hold, not a guardrail.
 
 - **Never claim:** [e.g. "Never claim regulatory approval that hasn't been granted"]
 - **Avoid topics:** [e.g. "Do not comment on competitor pricing"]

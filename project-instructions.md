@@ -16,7 +16,16 @@ Before producing any output, consult the relevant brand files:
 - **`brand/brand-context.md`** — For positioning, audience, competitors, and messaging hierarchy. Reference this when you need to understand *who* we're talking to and *why*.
 - **`brand/brand-voice.md`** — For tone, vocabulary, and writing style. Reference the "This, Not That" examples to calibrate your output. This is your primary guide for any written content.
 - **`brand/brand-visual.md`** — For colours, typography, spacing, and layout. Reference this when generating HTML, presentations, email templates, or design briefs.
+- **`brand/live-holds.md`** — Time-bound holds: embargoes, hold-until-announced items, proof points that cannot be used yet. Check it before finalising any content; see "Applying guardrails and holds" below for how to apply it.
 - **`reference/approved-copy-samples.md`** — For full-length examples of approved client copy. Reference these to calibrate voice, rhythm, and structure before writing any content.
+
+(`brand/CHANGELOG.md` is kit version history for maintainers — you do not need to read it to produce content.)
+
+## Applying guardrails and holds
+
+- The guardrails in `brand-context.md` §8 are **durable** — they always apply, to all content.
+- The entries in `brand/live-holds.md` are **temporary and scoped** — apply a hold only when the content falls inside its stated scope, and only until its lift condition is met. Do not generalise a hold into a brand-wide rule.
+- When content touches a hold's scope, flag the hold and what it blocks rather than silently dropping or rewriting the content. If a hold looks expired, say so — but confirm with the account team before treating it as lifted.
 
 ## Live Data Sources
 ### Connector routing
@@ -29,7 +38,7 @@ Before producing any output, consult the relevant brand files:
 - Use UK English spelling and conventions.
 - When generating HTML or visual artifacts, apply the colour palette and type scale from `brand-visual.md`.
 - When referencing products or services, use only the descriptions and terminology in `brand-context.md`. Do not invent features or benefits.
-- Respect all guardrails listed in the "Sensitive Topics & Guardrails" section of `brand-context.md`.
+- Respect all guardrails listed in the "Sensitive Topics & Guardrails" section of `brand-context.md`, and apply `brand/live-holds.md` per "Applying guardrails and holds" above.
 
 ## Content Defaults
 

@@ -31,7 +31,7 @@
 ### [Short hold name, e.g. "Acme partnership — hold until announced"]
 
 - **Hold:** [What must not be said or used right now — one or two sentences]
-- **Scope:** [Which content this applies to — e.g. "any post naming Acme", "URS project posts only", "pre-event social". Be narrow: the scope is what stops this hold being applied everywhere.]
+- **Scope:** [Which content this applies to — e.g. "any post naming Acme", "posts about the Project X rollout only", "pre-event social". Be narrow: the scope is what stops this hold being applied everywhere.]
 - **Lift condition:** [The event that ends the hold — e.g. "Acme press release is live", "client confirms project outcomes are usable"]
 - **Review by:** YYYY-MM-DD
 - **Source:** [Stakeholder name, date, Fathom link]

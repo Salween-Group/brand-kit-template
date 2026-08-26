@@ -26,7 +26,7 @@ The kit has two tiers, and precedence between them is explicit:
   These files load only for strategy-shaped work — positioning, messaging, website,
   campaign planning.
 - **`brand/`** is the operational distillation, loaded for everyday content work.
-  `brand-context.md` §2 and §7 summarise the positioning and must never contradict it.
+  `brand-context.md`'s "Brand Positioning" and "Key Messages" sections summarise the positioning and must never contradict it.
   If they disagree, the strategy file wins and the brand file gets a reconciliation pass.
 
 Keeping the tiers separate keeps everyday contexts lean: a LinkedIn post loads the

@@ -33,7 +33,7 @@ Before producing any output, consult the relevant brand files.
 
 ## Applying guardrails and holds
 
-- The guardrails in `brand-context.md` §8 are **durable** — they always apply, to all content.
+- The guardrails in `brand-context.md` ("Sensitive Topics & Guardrails") are **durable** — they always apply, to all content.
 - The entries in `brand/live-holds.md` are **temporary and scoped** — apply a hold only when the content falls inside its stated scope, and only until its lift condition is met. Do not generalise a hold into a brand-wide rule.
 - When content touches a hold's scope, flag the hold and what it blocks rather than silently dropping or rewriting the content. If a hold looks expired, say so — but confirm with the account team before treating it as lifted.
 

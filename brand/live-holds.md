@@ -12,12 +12,12 @@
   Durable brand truths (positioning, audiences, standing guardrails) belong in
   brand-context.md. The test: if a rule has a lift condition — "until the press release
   is live", "until the project delivers outcomes", "until the name is confirmed" — it is
-  a hold and belongs here, not in brand-context.md §8.
+  a hold and belongs here, not in brand-context.md's "Sensitive Topics & Guardrails" section.
 -->
 
 ## How to apply these holds
 
-- The guardrails in `brand-context.md` §8 are durable and always apply. The holds below
+- The guardrails in `brand-context.md` ("Sensitive Topics & Guardrails") are durable and always apply. The holds below
   apply **only** to content inside their stated scope, and **only** until their lift
   condition is met. Do not treat a hold as a general brand rule.
 - When a piece of content touches a hold's scope, **flag the hold to the user** and say

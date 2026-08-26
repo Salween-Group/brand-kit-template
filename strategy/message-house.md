@@ -81,7 +81,7 @@ Foundation:
 
 ## Notes on use
 
-- **Register.** [Internal-vs-external variants of key phrases — e.g. "'[sharper internal phrase]' is internal; prefer '[softer variant]' in outward copy." Term-level register rules also get a row in brand/brand-voice.md §5 so copy tasks can enforce them.]
+- **Register.** [Internal-vs-external variants of key phrases — e.g. "'[sharper internal phrase]' is internal; prefer '[softer variant]' in outward copy." Term-level register rules also get a row in brand/brand-voice.md § "Vocabulary Rules" so copy tasks can enforce them.]
 - **Restraint.** [Balance rules — e.g. "Pillar 2 language lives inside Pillar 2 only; if the house tilts toward one pillar, trim it rather than redistributing."]
 - **Language bank** (use sparingly, one or two per asset):
   - "[Approved line 1]"

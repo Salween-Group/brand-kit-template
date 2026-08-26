@@ -5,7 +5,7 @@
 
   Phrases that USED to be canonical and are now superseded — a replaced hero,
   a retired vocabulary ruling, a dead claim. Distinct from the "Banned Words"
-  in brand-voice.md §5 (things that were never on-brand): everything here was
+  in brand-voice.md § "Vocabulary Rules" (things that were never on-brand): everything here was
   once approved, which is exactly why it keeps creeping back in.
 
   ENFORCED BY CI: .github/workflows/retired-language-check.yml greps every
@@ -18,7 +18,7 @@
     exactly what should never appear again. Keep it long enough to avoid
     false positives ("with one senior-led team", not "senior-led").
   - If only a specific context is retired (a register rule, not a full
-    retirement), that belongs in brand-voice.md §5 as a scoped ruling —
+    retirement), that belongs in brand-voice.md § "Vocabulary Rules" as a scoped ruling —
     this file is only for phrases with NO remaining approved use.
   - When adding a row, also check reference/evidence.md — a retired claim
     usually has a register row to update too.

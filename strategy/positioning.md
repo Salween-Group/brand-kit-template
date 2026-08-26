@@ -171,7 +171,7 @@
 
 <!--
   Standing execution rules that follow from the positioning. Register rules for
-  individual terms belong in brand/brand-voice.md §5 (Preferred Terms) — put a
+  individual terms belong in brand/brand-voice.md § "Vocabulary Rules" (Preferred Terms) — put a
   row here only when the rule is about how to argue, not which word to use.
 -->
 
@@ -189,7 +189,7 @@
 -->
 
 1. `strategy/message-house.md` — pillars map 1:1 to the core claims above.
-2. `brand/brand-context.md` — §2 positioning and §7 key messages distil this document and must never contradict it.
+2. `brand/brand-context.md` — its "Brand Positioning" and "Key Messages" sections distil this document and must never contradict it.
 3. `brand/brand-voice.md` — vocabulary rulings that implement the positioning (preferred terms, register rules).
 4. [External assets: website, sales deck, campaign briefs — list the ones this client actually has.]
 

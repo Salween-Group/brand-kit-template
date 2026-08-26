@@ -6,26 +6,21 @@
   status:        DRAFT | FINAL — [approver name] sign-off [date] on [which items]
   last_updated:  YYYY-MM-DD
   maintained_by: [Your Name]
-  framework:     [The positioning framework this document applies, and the skill
-                 that builds it — e.g.:
-                 "April Dunford — Obviously Awesome (five-component positioning);
-                  built with the b2b-positioning skill"
-                 "Geoffrey Moore — Crossing the Chasm (adoption life cycle);
-                  built with the crossing-the-chasm skill"]
+  framework:     [The positioning framework this document applies — e.g.
+                 "April Dunford — Obviously Awesome (five-component positioning)"
+                 or "Geoffrey Moore — Crossing the Chasm (adoption life cycle)"]
   canonical:     This markdown file is the source of truth. Any branded .docx/PDF
                  is a generated deliverable — edit this file, then regenerate.
 
   CHOOSING THE FRAMEWORK — depends on the client's market maturity:
   - Established or well-understood market, competing against known alternatives
-    → April Dunford's five-component framework (b2b-positioning skill).
+    → April Dunford's five-component framework.
   - Disruptive or category-creating product that must cross from early adopters
-    to the mainstream → Geoffrey Moore's Crossing the Chasm
-    (crossing-the-chasm skill).
-  - Other frameworks may be added as skills. Whichever is used, the document
-    keeps the same shape: the Framework Analysis section carries the
-    framework's own structure, and the Synthesis sections at the end are
-    filled in for EVERY framework — they are the interface the rest of the
-    kit consumes.
+    to the mainstream → Geoffrey Moore's Crossing the Chasm.
+  - Other frameworks may be added. Whichever is used, the document keeps the
+    same shape: the Framework Analysis section carries the framework's own
+    structure, and the Synthesis sections at the end are filled in for EVERY
+    framework — they are the interface the rest of the kit consumes.
 
   GOVERNANCE — keep this file pure "what is true now":
   - Change history goes in brand/CHANGELOG.md, never in this header. Narrative
@@ -39,8 +34,8 @@
   - Claims and statistics used here must exist in reference/evidence.md.
     Correct a claim there, then reconcile here — never fork the wording.
   - Switching frameworks is a strategic reframe: bump the document identity
-    (v1 → v2), rebuild through the new framework's skill, and reconcile the
-    Synthesis sections and everything downstream of them.
+    (v1 → v2), rebuild the document under the new framework, and reconcile
+    the Synthesis sections and everything downstream of them.
 -->
 
 > **Status:** [e.g. "Approved — [approver] sign-off [date] on all strategic items."]
@@ -65,11 +60,10 @@
 ## Framework Analysis
 
 <!--
-  The framework-specific body, produced by the positioning skill. Use the
-  framework's OWN structure and section names — do not force one framework's
-  headings onto another. For reference:
+  The framework-specific body. Use the framework's OWN structure and section
+  names — do not force one framework's headings onto another. For reference:
 
-  Dunford (b2b-positioning skill) — five components, built in order:
+  Dunford — five components, built in order:
     1. Competitive alternatives  (what the buyer would do if the client
        didn't exist)
     2. Unique attributes         (what the client has that the alternatives
@@ -79,7 +73,7 @@
        behaviour)
     5. Market category           (the context that makes the value obvious)
 
-  Moore (crossing-the-chasm skill):
+  Moore (Crossing the Chasm):
     - Adoption life cycle position and the chasm (where the product sits;
       visionaries vs pragmatists)
     - Beachhead target segment   (the first pragmatist niche to win)
@@ -201,4 +195,4 @@
 
 ---
 
-*Owner: [name]. Framework: [name + skill]. Next review: [date]. Version history: `brand/CHANGELOG.md`. Sign-off record: PR history on this file.*
+*Owner: [name]. Framework: [name]. Next review: [date]. Version history: `brand/CHANGELOG.md`. Sign-off record: PR history on this file.*

@@ -1,4 +1,4 @@
-# [Client Name] — Positioning Statement
+# [Client Name] — Positioning
 
 <!--
   client:        [Client Name]
@@ -6,9 +6,26 @@
   status:        DRAFT | FINAL — [approver name] sign-off [date] on [which items]
   last_updated:  YYYY-MM-DD
   maintained_by: [Your Name]
-  framework:     April Dunford — Obviously Awesome (five-component positioning)
+  framework:     [The positioning framework this document applies, and the skill
+                 that builds it — e.g.:
+                 "April Dunford — Obviously Awesome (five-component positioning);
+                  built with the b2b-positioning skill"
+                 "Geoffrey Moore — Crossing the Chasm (adoption life cycle);
+                  built with the crossing-the-chasm skill"]
   canonical:     This markdown file is the source of truth. Any branded .docx/PDF
                  is a generated deliverable — edit this file, then regenerate.
+
+  CHOOSING THE FRAMEWORK — depends on the client's market maturity:
+  - Established or well-understood market, competing against known alternatives
+    → April Dunford's five-component framework (b2b-positioning skill).
+  - Disruptive or category-creating product that must cross from early adopters
+    to the mainstream → Geoffrey Moore's Crossing the Chasm
+    (crossing-the-chasm skill).
+  - Other frameworks may be added as skills. Whichever is used, the document
+    keeps the same shape: the Framework Analysis section carries the
+    framework's own structure, and the Synthesis sections at the end are
+    filled in for EVERY framework — they are the interface the rest of the
+    kit consumes.
 
   GOVERNANCE — keep this file pure "what is true now":
   - Change history goes in brand/CHANGELOG.md, never in this header. Narrative
@@ -21,11 +38,14 @@
     still get a CHANGELOG entry.
   - Claims and statistics used here must exist in reference/evidence.md.
     Correct a claim there, then reconcile here — never fork the wording.
+  - Switching frameworks is a strategic reframe: bump the document identity
+    (v1 → v2), rebuild through the new framework's skill, and reconcile the
+    Synthesis sections and everything downstream of them.
 -->
 
-> **Status:** [e.g. "Approved — [approver] sign-off [date] on all five components."]
+> **Status:** [e.g. "Approved — [approver] sign-off [date] on all strategic items."]
 >
-> This document applies April Dunford's five-component positioning framework. Each component builds on the last — read them in order. The positioning statement at the end is the synthesis, not the starting point.
+> **Framework:** [Framework name], chosen because [one line on the client's market maturity — e.g. "the client competes in an established market against known alternatives" or "the product is category-creating and must cross from early adopters to mainstream buyers"]. The Framework Analysis below follows that framework's own structure; the Synthesis sections at the end are the same for every framework, because the rest of the kit builds on them.
 
 ---
 
@@ -34,152 +54,112 @@
 <!--
   If the positioning rests on a belief about how the client's market actually
   works (a structural problem, a buying-behaviour insight), state it here first
-  so every component below can build on it. Delete this section if the
-  positioning doesn't need one.
+  so the analysis below can build on it. Delete this section if the positioning
+  doesn't need one.
 -->
 
 [e.g. "Our client's buyers do most of their research before they ever speak to a vendor. By the time a prospect raises a hand, the shortlist is largely set — so the job of marketing is to be on it."]
 
 ---
 
-## 1. Competitive alternatives
-
-*What would the best-fit buyer do if [Client Name] didn't exist?*
+## Framework Analysis
 
 <!--
-  List what buyers actually use today — including "do nothing" and "spreadsheet"
-  if true. Name real competitors. For each alternative, say what it gets right
-  and where it fails the buyer. Close the section by naming the gap none of
-  them fills — that gap is what the rest of the document argues into.
+  The framework-specific body, produced by the positioning skill. Use the
+  framework's OWN structure and section names — do not force one framework's
+  headings onto another. For reference:
+
+  Dunford (b2b-positioning skill) — five components, built in order:
+    1. Competitive alternatives  (what the buyer would do if the client
+       didn't exist)
+    2. Unique attributes         (what the client has that the alternatives
+       don't)
+    3. Value themes              (what those attributes enable for the buyer)
+    4. Best-fit clients          (who cares most, defined by situation and
+       behaviour)
+    5. Market category           (the context that makes the value obvious)
+
+  Moore (crossing-the-chasm skill):
+    - Adoption life cycle position and the chasm (where the product sits;
+      visionaries vs pragmatists)
+    - Beachhead target segment   (the first pragmatist niche to win)
+    - Whole product              (what must surround the core product for
+      pragmatists to buy)
+    - Market alternative and product alternative (the two anchors that frame
+      the category and the differentiation)
+    - Competitive Positioning Compass
+    - Moore's two-sentence claim
+
+  Keep the components in the framework's prescribed order — most frameworks
+  build sequentially, and the synthesis only works if the argument does.
 -->
 
-**[Alternative 1, e.g. "Status quo / manual process"].** [What it is, what it gets right, where it fails.]
+### [Framework component 1]
 
-**[Alternative 2, e.g. "Named direct competitors"].** [As above.]
+[Analysis.]
 
-**[Alternative 3, e.g. "In-house build / hire"].** [As above.]
+### [Framework component 2]
 
-**[Alternative 4, e.g. "The big incumbent"].** [As above.]
+[Analysis.]
 
-[Closing line: the gap none of these addresses — the gap [Client Name] is built to fill.]
+### [Framework component 3]
+
+[Analysis.]
+
+<!-- Add sections per the framework — as many as it prescribes. -->
 
 ---
 
-## 2. Unique attributes
-
-*What does [Client Name] have, specifically, that the alternatives don't?*
+# Synthesis
 
 <!--
-  3–5 attributes. Each must be a capability or feature the client genuinely has
-  and the alternatives genuinely lack — not an aspiration. Guardrails that
-  scope an attribute ("centrality, not totality") live in the attribute text
-  itself so they travel with it.
+  REQUIRED FOR EVERY FRAMEWORK. These sections are the contract the rest of
+  the kit depends on: strategy/message-house.md builds its pillars on the core
+  claims, brand-context.md distils the statement and best-fit profile, and
+  copy tasks take proof points from the evidence register. Where the Framework
+  Analysis above already contains a section that answers one of these (e.g.
+  Dunford's Best-fit clients, Moore's beachhead), keep the full detail there
+  and make the section here a compact summary that points to it.
 -->
 
-**[Attribute 1].** [What it is and why the alternatives can't match it.]
-
-**[Attribute 2].** [As above.]
-
-**[Attribute 3].** [As above.]
-
----
-
-## 3. Value themes
-
-*So what? What do those attributes actually enable for the buyer?*
+## Positioning statement
 
 <!--
-  2–4 themes. Each theme converts one or more attributes into a buyer outcome.
-  These themes become the pillars of strategy/message-house.md — keep the
-  mapping 1:1 where possible.
+  The framework's synthesis in its native form — e.g. Dunford's positioning
+  statement, or Moore's two-sentence claim ("For (target) who (need),
+  (product) is a (category) that (benefit). Unlike (alternative),
+  (differentiation).").
 -->
 
-### Theme 1 — [Outcome-led title]
-
-[Because (attribute), the buyer gets (outcome). Spell out the causal chain.]
-
-### Theme 2 — [Outcome-led title]
-
-[As above.]
-
-### Theme 3 — [Outcome-led title]
-
-[As above.]
-
----
-
-## 4. Best-fit clients
-
-*Which buyers care most about this value — and what makes them different from everyone else?*
-
-<!--
-  Define by situation and behaviour, not just firmographics. A senior
-  salesperson should be able to read this and disqualify a prospect in minutes.
-  Internal-only qualifiers (e.g. funding-stage shorthand) are marked as such —
-  keep them out of external copy.
--->
-
-**Role and seniority.**
-[Who holds the budget and the problem.]
-
-**Company stage.**
-[Size, sector, sales-cycle shape.]
-
-**Current situation.**
-[The observable symptoms that make them in-market for this value.]
-
-**Buying trigger.**
-[The 2–4 events that turn the situation into a purchase.]
-
-**Operating model.**
-[How they want to work with a provider — and what makes a weaker fit.]
-
-**What they're not.**
-[Explicit disqualifiers. Positive emphasis where the client requires it — no negative exclusions the client hasn't approved.]
-
-### Secondary best-fit *(optional)*
-
-[A second segment the same value themes serve, with its distinct trigger.]
-
----
-
-## 5. Market category
-
-*What context makes the value obvious to the best-fit client?*
-
-[Client Name] is a [category label].
-
-[Why this category: the category should be the conclusion of the argument above, not a label bolted on. Note what buying criteria the category implies.]
-
-*Terminology note (optional): [e.g. distinguish the category label from the methodology claim if the kit uses both].*
-
----
-
-## Positioning Statement
-
-For [best-fit buyer] at [company type] — who [situation / structural problem] — [Client Name] is the [category] that [core value].
-
-Unlike [the alternatives, compressed], [Client Name] [unique attributes as reasons to believe].
+[Full statement.]
 
 **One-sentence version:**
-> [Client Name] is the [category] that [mechanism] to [outcome] for [buyer].
+> [Client Name] is the [category / frame] that [mechanism] to [outcome] for [buyer].
 
----
+## Core claims
 
-## How the Framework Connects
+*The claims the messaging builds on — `strategy/message-house.md` pillars map 1:1 to these.*
 
-| Framework component | [Client Name] answer |
-|---|---|
-| Structural problem *(if using a house view)* | [One line] |
-| What buyers use instead (competitive alternatives) | [One line] |
-| What we do differently (unique attributes) | [One line] |
-| What this enables (value themes) | [One line] |
-| Who cares most (best-fit clients) | [One line] |
-| Context that makes value obvious (market category) | [One line] |
+1. **[Claim 1 title]** — [one or two lines; where the framework detail lives, name the section above].
+2. **[Claim 2 title]** — [as above].
+3. **[Claim 3 title]** — [as above].
 
----
+## Best-fit clients
 
-## Proof Points
+*Who this positioning is for — Dunford's best-fit profile, Moore's beachhead segment, or the equivalent. A senior salesperson should be able to disqualify a prospect from this section in minutes.*
+
+- **Who:** [role, seniority, company stage]
+- **Situation:** [the observable symptoms that make them in-market]
+- **Trigger:** [the events that turn the situation into a purchase]
+- **Not a fit:** [explicit disqualifiers — positive emphasis where the client requires it]
+
+## Market frame
+
+*The context that makes the value obvious — Dunford's market category, or Moore's market-alternative / product-alternative anchors.*
+
+[Client Name] is a [category label / frame of reference]. [Why this frame, in one or two lines — and any terminology distinctions (e.g. category label vs methodology claim) that copy must respect.]
+
+## Proof points
 
 <!--
   Every claim here must have a row in reference/evidence.md — that file is the
@@ -193,9 +173,7 @@ Unlike [the alternatives, compressed], [Client Name] [unique attributes as reaso
 
 *Gaps to close: [proof the positioning needs but doesn't yet have — tracked as `gap-to-close` rows in reference/evidence.md].*
 
----
-
-## What This Means in Practice
+## What this means in practice
 
 <!--
   Standing execution rules that follow from the positioning. Register rules for
@@ -208,9 +186,7 @@ Unlike [the alternatives, compressed], [Client Name] [unique attributes as reaso
 | [e.g. "Lead every asset with the structural problem before naming what the client does."] | [Why] |
 | [e.g. "Use '[outcome claim]' as the standard outcome claim."] | [Why] |
 
----
-
-## Downstream Map
+## Downstream map
 
 <!--
   What derives from this document. When this file changes, these are the files
@@ -218,11 +194,11 @@ Unlike [the alternatives, compressed], [Client Name] [unique attributes as reaso
   reconciliation belongs on the PR, not here.
 -->
 
-1. `strategy/message-house.md` — pillars map 1:1 to the value themes above.
+1. `strategy/message-house.md` — pillars map 1:1 to the core claims above.
 2. `brand/brand-context.md` — §2 positioning and §7 key messages distil this document and must never contradict it.
 3. `brand/brand-voice.md` — vocabulary rulings that implement the positioning (preferred terms, register rules).
 4. [External assets: website, sales deck, campaign briefs — list the ones this client actually has.]
 
 ---
 
-*Owner: [name]. Next review: [date]. Version history: `brand/CHANGELOG.md`. Sign-off record: PR history on this file.*
+*Owner: [name]. Framework: [name + skill]. Next review: [date]. Version history: `brand/CHANGELOG.md`. Sign-off record: PR history on this file.*

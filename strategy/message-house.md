@@ -15,8 +15,10 @@
     (or an open PR) — not a "NOTE FOR [approver]" buried in this file.
   - Locked items (a locked hero, a heading fixed by design) are marked inline
     where they live, with the lock's source and date. Unlocking one is a PR.
-  - This house derives from strategy/positioning.md — pillars map 1:1 to its
-    value themes. If the positioning changes, refresh the house; never patch
+  - This house derives from strategy/positioning.md — pillars map 1:1 to the
+    core claims in its Synthesis section (framework-agnostic: those claims
+    exist whether the positioning was built with Dunford, Moore, or another
+    framework). If the positioning changes, refresh the house; never patch
     the house in a direction the positioning doesn't support.
 -->
 
@@ -42,6 +44,8 @@
 -->
 
 ### Pillar 1 — [Heading, fixed]
+
+<!-- Each pillar corresponds to one core claim in the positioning Synthesis. -->
 
 **[Statement line: the pillar's claim in one or two sentences.]**
 
@@ -86,4 +90,4 @@ Foundation:
 
 ---
 
-*Derived from `strategy/positioning.md` ([version/date]). Pillar 1 → Theme 1 ([name]), Pillar 2 → Theme 2 ([name]), Pillar 3 → Theme 3 ([name]). Refresh the house if the positioning changes. Version history: `brand/CHANGELOG.md`.*
+*Derived from `strategy/positioning.md` ([framework], [version/date]). Pillar 1 → Core claim 1 ([name]), Pillar 2 → Core claim 2 ([name]), Pillar 3 → Core claim 3 ([name]). Refresh the house if the positioning changes. Version history: `brand/CHANGELOG.md`.*

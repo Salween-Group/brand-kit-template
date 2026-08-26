@@ -1,7 +1,9 @@
 # Changelog — [Client Name] Brand Kit
 
 <!--
-  Version history for brand/brand-context.md, brand/brand-voice.md and brand/brand-visual.md.
+  Version history for the strategy/ files (positioning.md, message-house.md) and the
+  brand/ files (brand-context.md, brand-voice.md, brand-visual.md, retired-language.md),
+  plus reference/evidence.md.
 
   This file lives OUTSIDE the brand files so that project chats never pay its context cost.
   It is read in exactly two situations:

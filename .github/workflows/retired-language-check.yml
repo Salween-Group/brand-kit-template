@@ -1,0 +1,71 @@
+name: Retired language check
+
+# Fails the build if any phrase listed in brand/retired-language.md appears
+# anywhere else in the kit. Matching is literal and case-insensitive.
+# brand/retired-language.md itself and brand/CHANGELOG.md are exempt (the
+# list must name the phrases, and history may quote them).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for retired phrases
+        shell: bash
+        run: |
+          set -euo pipefail
+          LIST="brand/retired-language.md"
+
+          if [ ! -f "$LIST" ]; then
+            echo "No $LIST — nothing to check."
+            exit 0
+          fi
+
+          # Extract the Phrase column from table rows, ignoring HTML-commented
+          # examples, the header row, and separator rows.
+          phrases=$(awk '
+            /<!--/ {incomment=1}
+            /-->/  {incomment=0; next}
+            incomment {next}
+            /^\|/ {
+              split($0, cols, "|")
+              phrase = cols[2]
+              gsub(/^[ \t]+|[ \t]+$/, "", phrase)
+              gsub(/`/, "", phrase)
+              if (phrase == "" || phrase == "Phrase") next
+              if (phrase ~ /^[-: ]+$/) next
+              print phrase
+            }
+          ' "$LIST")
+
+          if [ -z "$phrases" ]; then
+            echo "Retired-language list is empty — nothing to check."
+            exit 0
+          fi
+
+          # Every tracked markdown file except the list itself and the changelog.
+          mapfile -t files < <(git ls-files '*.md' \
+            | grep -v -x 'brand/retired-language.md' \
+            | grep -v -x 'brand/CHANGELOG.md')
+
+          fail=0
+          while IFS= read -r phrase; do
+            [ -z "$phrase" ] && continue
+            hits=$(grep -Fin -- "$phrase" "${files[@]}" || true)
+            if [ -n "$hits" ]; then
+              echo "::error::Retired phrase found: \"$phrase\""
+              echo "$hits"
+              fail=1
+            fi
+          done <<< "$phrases"
+
+          if [ "$fail" -eq 0 ]; then
+            echo "No retired phrases found."
+          fi
+          exit "$fail"

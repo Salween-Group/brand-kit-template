@@ -99,18 +99,20 @@ The base tone above flexes depending on the situation:
 
 ### Preferred Terms
 
-Use the left column. Never use the right column.
+Use the left column. Never use the right column. Every vocabulary ruling lands here as a row — this table is the single place a copy task looks up which term to use and where; rulings buried in changelogs or strategy documents don't get enforced.
 
-| Use This ✓                  | Not This ✗                        | Reason                                    |
-|-----------------------------|-----------------------------------|--------------------------------------------|
-| [e.g. "clients"]            | [e.g. "customers"]                | [e.g. "Reflects our consultative model"]   |
-| [e.g. "platform"]           | [e.g. "tool / app"]              | [e.g. "Positioning as enterprise-grade"]   |
-| [e.g. "team members"]       | [e.g. "employees / staff"]       | [e.g. "Cultural preference"]               |
-| [e.g. "growth"]             | [e.g. "scale"]                   | [e.g. "Less Silicon Valley, more grounded"]|
+The **Scope / register** column is for rulings that depend on context (a term that's fine internally but not in a hero, a customer-facing phrase with an internal-only sharper variant). Leave it as "All" for unconditional rulings.
+
+| Use This ✓                  | Not This ✗                        | Scope / register                                | Reason / ruling                            |
+|-----------------------------|-----------------------------------|--------------------------------------------------|--------------------------------------------|
+| [e.g. "clients"]            | [e.g. "customers"]                | All                                              | [e.g. "Reflects our consultative model"]   |
+| [e.g. "platform"]           | [e.g. "tool / app"]              | All                                              | [e.g. "Positioning as enterprise-grade"]   |
+| [e.g. "isolated tactics"]   | [e.g. "random acts of marketing"] | [e.g. "Customer-facing copy; the ✗ phrase is internal / thought-leadership only"] | [e.g. "The idiom is generic and not ownable — ruling DD Mon YYYY"] |
+| [e.g. "senior-led (as reason-to-believe)"] | [e.g. "senior-led as the headline claim"] | [e.g. "Hero and first-touch contexts only; unrestricted elsewhere"] | [e.g. "Saturated claim in the category — H1 audit DD Mon YYYY"] |
 
 ### Banned Words & Phrases
 
-Words and phrases that must never appear in brand communications.
+Words and phrases that must never appear in brand communications — things that were never on-brand.
 
 - [e.g. "Leverage" (as a verb)]
 - [e.g. "Synergy / synergies"]
@@ -118,6 +120,8 @@ Words and phrases that must never appear in brand communications.
 - [e.g. "Disrupt / disruptive"]
 - [e.g. "Circle back"]
 - [e.g. "It goes without saying"]
+
+*(Phrases that used to be canonical and are now superseded — a replaced hero, a retired claim — are a different thing: they go in `brand/retired-language.md`, where CI enforces them.)*
 
 ### Industry Jargon Policy
 

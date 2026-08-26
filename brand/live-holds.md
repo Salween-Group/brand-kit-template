@@ -4,8 +4,10 @@
   last_updated: YYYY-MM-DD
 
   Time-bound operational rules: embargoes, hold-until-announced wins, dates awaiting
-  verification, proof points that cannot be used YET. Everything in this file is expected
-  to expire and be REMOVED — if this file is growing, something is wrong.
+  verification, proof points that cannot be used YET, and merged strategy changes still
+  awaiting client confirmation (where the change wasn't kept on an open PR instead).
+  Everything in this file is expected to expire and be REMOVED — if this file is
+  growing, something is wrong.
 
   Durable brand truths (positioning, audiences, standing guardrails) belong in
   brand-context.md. The test: if a rule has a lift condition — "until the press release

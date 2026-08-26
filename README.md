@@ -5,7 +5,7 @@ Starting template for our client brand kits. Markdown files for use with LLMs an
 
 | File | Purpose | When the tools use it |
 |---|---|---|
-| `strategy/positioning.md` | The full positioning argument (April Dunford five-component framework) — canonical for all strategy | Positioning, messaging-architecture, website, and campaign-strategy work — **not** loaded for everyday copy |
+| `strategy/positioning.md` | The full positioning argument — framework chosen per client market maturity (e.g. Dunford five-component via the b2b-positioning skill, or Moore's Crossing the Chasm via the crossing-the-chasm skill), always ending in the same framework-agnostic Synthesis sections — canonical for all strategy | Positioning, messaging-architecture, website, and campaign-strategy work — **not** loaded for everyday copy |
 | `strategy/message-house.md` | Messaging architecture: roof, pillars, language bank — derived from the positioning | Strategy and messaging work, campaign planning — **not** loaded for everyday copy |
 | `brand/brand-context.md` | Positioning distilled, audiences, competitors, products, durable guardrails | Understanding who the brand is and who it speaks to |
 | `brand/brand-voice.md` | Tone, vocabulary, writing rules, example pairs | Writing any copy or content |
@@ -22,7 +22,7 @@ Starting template for our client brand kits. Markdown files for use with LLMs an
 The kit has two tiers, and precedence between them is explicit:
 
 - **`strategy/`** is the source argument. `positioning.md` is canonical for all strategic
-  content; `message-house.md` derives from it (pillars map 1:1 to its value themes).
+  content; `message-house.md` derives from it (pillars map 1:1 to its Synthesis core claims).
   These files load only for strategy-shaped work — positioning, messaging, website,
   campaign planning.
 - **`brand/`** is the operational distillation, loaded for everyday content work.

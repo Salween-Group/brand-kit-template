@@ -23,7 +23,7 @@ Before producing any output, consult the relevant brand files.
 
 **Load on demand (strategy-shaped work only):**
 
-- **`strategy/positioning.md`** — The full positioning argument (Dunford five components). Load it for positioning, messaging-architecture, website, campaign-strategy, and competitive work. Do **not** load it for everyday copy tasks — `brand-context.md` is its distillation and is enough.
+- **`strategy/positioning.md`** — The full positioning argument. The framework varies by client (see the file's header — e.g. Dunford five-component or Moore's Crossing the Chasm), but the Synthesis sections at the end are the same for every framework and are what the rest of the kit builds on. Load it for positioning, messaging-architecture, website, campaign-strategy, and competitive work. Do **not** load it for everyday copy tasks — `brand-context.md` is its distillation and is enough.
 - **`strategy/message-house.md`** — Roof, pillars, and language bank. Load it alongside the positioning for messaging and campaign work, and when writing hero or first-touch copy (it records the locked hero and its usage notes).
 - **`reference/evidence.md`** — The register of every approved claim, statistic, and citation. Whenever content states a claim or cites research, use the exact approved wording from a `usable` row, with the correct vintage. If the claim you need isn't there, flag the gap — never improvise a statistic.
 

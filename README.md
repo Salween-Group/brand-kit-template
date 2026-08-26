@@ -5,7 +5,7 @@ Starting template for our client brand kits. Markdown files for use with LLMs an
 
 | File | Purpose | When the tools use it |
 |---|---|---|
-| `strategy/positioning.md` | The full positioning argument — framework chosen per client market maturity (e.g. Dunford five-component via the b2b-positioning skill, or Moore's Crossing the Chasm via the crossing-the-chasm skill), always ending in the same framework-agnostic Synthesis sections — canonical for all strategy | Positioning, messaging-architecture, website, and campaign-strategy work — **not** loaded for everyday copy |
+| `strategy/positioning.md` | The full positioning argument — framework chosen per client market maturity (e.g. April Dunford's five-component positioning, or Geoffrey Moore's Crossing the Chasm), always ending in the same framework-agnostic Synthesis sections — canonical for all strategy | Positioning, messaging-architecture, website, and campaign-strategy work — **not** loaded for everyday copy |
 | `strategy/message-house.md` | Messaging architecture: roof, pillars, language bank — derived from the positioning | Strategy and messaging work, campaign planning — **not** loaded for everyday copy |
 | `brand/brand-context.md` | Positioning distilled, audiences, competitors, products, durable guardrails | Understanding who the brand is and who it speaks to |
 | `brand/brand-voice.md` | Tone, vocabulary, writing rules, example pairs | Writing any copy or content |
@@ -59,8 +59,7 @@ project chat and crowds out the content.
   (`.github/workflows/retired-language-check.yml`) greps the kit on every push and PR
   and fails the build if a retired phrase reappears.
 - **Generated deliverables are build products.** The markdown is the source of truth;
-  branded .docx/PDF versions are regenerated from it (via the positioning / message-house
-  skills), never edited directly.
+  branded .docx/PDF versions are regenerated from it, never edited directly.
 
 ### File structure
 

@@ -2,8 +2,10 @@ name: Retired language check
 
 # Fails the build if any phrase listed in brand/retired-language.md appears
 # anywhere else in the kit. Matching is literal and case-insensitive.
-# brand/retired-language.md itself and brand/CHANGELOG.md are exempt (the
-# list must name the phrases, and history may quote them).
+# Exempt: brand/retired-language.md itself (the list must name the phrases),
+# brand/CHANGELOG.md (history may quote them), and
+# reference/voice-guardian-pack.md (the generated guardian pack must carry the
+# retired phrases verbatim to enforce them wherever it is deployed).
 
 on:
   push:
@@ -52,7 +54,8 @@ jobs:
           # Every tracked markdown file except the list itself and the changelog.
           mapfile -t files < <(git ls-files '*.md' \
             | grep -v -x 'brand/retired-language.md' \
-            | grep -v -x 'brand/CHANGELOG.md')
+            | grep -v -x 'brand/CHANGELOG.md' \
+            | grep -v -x 'reference/voice-guardian-pack.md')
 
           fail=0
           while IFS= read -r phrase; do

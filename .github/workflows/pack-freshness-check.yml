@@ -1,0 +1,49 @@
+name: Voice guardian pack freshness
+
+# The voice-guardian context pack (reference/voice-guardian-pack.md) is a
+# generated build product compiled from the kit's voice-relevant files by the
+# voice-guardian-pack skill. This check fails a PR that changes any of those
+# source files without regenerating the pack — a stale pack silently enforces
+# last month's rules in whatever custom GPT or skill it was deployed to.
+#
+# Skipped entirely on kits that have no pack yet. The check is deliberately
+# diff-based (did the pack move when its sources moved), not content-based —
+# regeneration judgment lives in the skill; CI only enforces that it ran.
+
+on:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fail if voice sources changed without regenerating the pack
+        shell: bash
+        run: |
+          set -euo pipefail
+          PACK="reference/voice-guardian-pack.md"
+
+          if [ ! -f "$PACK" ]; then
+            echo "No $PACK in this kit — check skipped."
+            exit 0
+          fi
+
+          BASE="origin/${{ github.base_ref }}"
+          changed=$(git diff --name-only "$BASE"...HEAD)
+
+          watched='^(brand/brand-voice\.md|brand/brand-context\.md|brand/retired-language\.md|brand/live-holds\.md|reference/evidence\.md|reference/approved-copy-samples\.md|strategy/positioning\.md|strategy/message-house\.md)$'
+          voice_changed=$(echo "$changed" | grep -E "$watched" || true)
+          pack_changed=$(echo "$changed" | grep -Fx "$PACK" || true)
+
+          if [ -n "$voice_changed" ] && [ -z "$pack_changed" ]; then
+            echo "::error::Voice-relevant files changed but $PACK was not regenerated. Run the voice-guardian-pack skill and commit the result (or include a pack update in this PR)."
+            echo "Changed voice sources:"
+            echo "$voice_changed"
+            exit 1
+          fi
+
+          echo "Pack freshness OK."

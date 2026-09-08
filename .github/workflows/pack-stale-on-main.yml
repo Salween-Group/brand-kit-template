@@ -2,9 +2,9 @@ name: Pack staleness on main
 
 # Companion to pack-freshness-check.yml, which runs only on pull_request:
 # a merge that changes voice sources without regenerating the pack leaves
-# main silently stale, with no signal anywhere (observed live: brand-kit-nspl
-# PR #24, 8 September 2026 — the pack regeneration stranded on the merged
-# branch and nothing flagged it). This workflow runs on every push to main
+# main silently stale, with no signal anywhere (observed live on a kit's
+# brand-sync merge, 8 September 2026 — the pack regeneration stranded on the
+# merged branch and nothing flagged it). This workflow runs on every push to main
 # and keeps exactly one open 'pack-stale' issue as the durable signal:
 #
 #   * stale (a voice source changed after the pack's last update) -> ensure

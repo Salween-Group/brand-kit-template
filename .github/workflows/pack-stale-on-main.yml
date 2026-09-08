@@ -1,0 +1,108 @@
+name: Pack staleness on main
+
+# Companion to pack-freshness-check.yml, which runs only on pull_request:
+# a merge that changes voice sources without regenerating the pack leaves
+# main silently stale, with no signal anywhere (observed live: brand-kit-nspl
+# PR #24, 8 September 2026 — the pack regeneration stranded on the merged
+# branch and nothing flagged it). This workflow runs on every push to main
+# and keeps exactly one open 'pack-stale' issue as the durable signal:
+#
+#   * stale (a voice source changed after the pack's last update) -> ensure
+#     one open pack-stale issue exists (create if missing, else leave it);
+#   * fresh -> close any open pack-stale issue.
+#
+# Staleness is absolute, not push-range-based: the test is "did any voice
+# source change since the commit that last touched the pack", so a missed
+# push or force push cannot hide staleness, and the signal self-clears on
+# the push that merges the regeneration PR.
+#
+# Pure signal — the run itself stays green. Regeneration judgment lives in
+# the voice-guardian-pack skill (2.0.0+ is repo-first: run it from anywhere,
+# by hand or from a scheduled routine that watches for pack-stale issues).
+# Skipped entirely on kits that have no pack yet.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute staleness and manage the signal issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          PACK="reference/voice-guardian-pack.md"
+          LABEL="pack-stale"
+
+          if [ ! -f "$PACK" ]; then
+            echo "No $PACK in this kit — check skipped."
+            exit 0
+          fi
+
+          sources=(
+            brand/brand-voice.md
+            brand/brand-context.md
+            brand/retired-language.md
+            brand/live-holds.md
+            reference/evidence.md
+            reference/approved-copy-samples.md
+            strategy/positioning.md
+            strategy/message-house.md
+          )
+
+          pack_commit=$(git log -1 --format=%H -- "$PACK")
+          stale_commits=$(git log --format='- %h %s' "${pack_commit}..HEAD" -- "${sources[@]}")
+
+          open_issue=$(gh issue list --repo "$REPO" --label "$LABEL" --state open \
+            --json number --jq '.[0].number // empty')
+
+          if [ -n "$stale_commits" ]; then
+            if [ -n "$open_issue" ]; then
+              echo "Stale; signal issue #$open_issue already open — nothing to add."
+              exit 0
+            fi
+
+            gh label create "$LABEL" --repo "$REPO" --force \
+              --description "reference/voice-guardian-pack.md is stale on main" \
+              --color D93F0B
+
+            body_file=$(mktemp)
+            {
+              echo "The pack was last updated in \`${pack_commit:0:12}\`, and these commits have touched voice sources on \`main\` since:"
+              echo ""
+              echo "$stale_commits"
+              echo ""
+              echo "**Fix:** run the **voice-guardian-pack** skill (2.0.0+ is repo-first — run it from anywhere; it clones this kit fresh, regenerates from \`origin/main\`, and opens the regeneration PR). Merging that PR closes this issue automatically on the next push to \`main\`."
+              echo ""
+              echo "Deployed copies of the pack (custom GPT knowledge file, skill reference) stay stale until the regenerated file is re-uploaded — verify via the pack's §0 stamp (date + source commit)."
+              echo ""
+              echo "_Opened automatically by \`.github/workflows/pack-stale-on-main.yml\`._"
+            } > "$body_file"
+
+            gh issue create --repo "$REPO" \
+              --title "voice-guardian-pack.md is stale on main" \
+              --label "$LABEL" --body-file "$body_file"
+            echo "Stale — signal issue opened."
+            exit 0
+          fi
+
+          if [ -n "$open_issue" ]; then
+            gh issue close "$open_issue" --repo "$REPO" --comment \
+              "The pack caught up in \`$(git rev-parse --short=12 HEAD)\` — no voice-source commits after the pack's last update. Closing automatically. Deployed copies still need the re-upload: verify via the pack's §0 stamp."
+            echo "Fresh — closed signal issue #$open_issue."
+          else
+            echo "Pack fresh — nothing to do."
+          fi

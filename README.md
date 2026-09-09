@@ -75,6 +75,12 @@ project chat and crowds out the content.
   quote retired phrases verbatim to enforce them). The last mile — re-uploading the
   regenerated pack into the custom GPT or skill — is a human step; the pack's stamp is
   how you verify a deployed copy is current.
+- **Hold expiry is machine-watched.** Every hold in `brand/live-holds.md` carries a
+  review-by date, and holds are expected to expire and be removed — so a scheduled
+  workflow (`.github/workflows/holds-expiry-check.yml`) scans the file daily and
+  maintains a single tracking issue listing any holds past review-by, for the account
+  team to renew or lift. The issue closes itself once every date is current. An expired
+  date never means a hold has lifted — the workflow surfaces it; a human confirms.
 
 ### File structure
 
@@ -96,6 +102,7 @@ brand-kit-template/
 ├── .github/
 │   └── workflows/
 │       ├── retired-language-check.yml
+│       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml
 │       └── pack-stale-on-main.yml
 ├── project-instructions.md

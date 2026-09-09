@@ -1,0 +1,123 @@
+name: Live-holds expiry check
+
+# Every hold in brand/live-holds.md carries a "Review by" date, and the file's
+# own contract says holds are expected to expire and be REMOVED — but nothing
+# watches the dates. An expired hold is the kit's most dangerous state:
+# writers either keep obeying a hold that has lifted (missed proof points) or
+# start ignoring holds as stale noise (embargo breach).
+#
+# This scheduled check parses brand/live-holds.md daily and maintains ONE
+# tracking issue listing every hold past its review-by date, for the account
+# team to triage per the file's rules: confirm with the client, renew the
+# date, or lift and delete the hold (recording the removal in
+# brand/CHANGELOG.md). The issue closes itself when no expired holds remain.
+#
+# Safe on kits without dated holds: only real YYYY-MM-DD dates match, so the
+# template's placeholder never fires, and a missing file skips the run.
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan brand/live-holds.md for expired review-by dates
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="brand/live-holds.md"
+
+          if [ ! -f "$FILE" ]; then
+            echo "No $FILE — check skipped."
+            echo "expired=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          today=$(date -u +%F)
+
+          # Track the current "### " hold heading; on a "**Review by:**" line
+          # whose first YYYY-MM-DD date is before today, emit a markdown row.
+          # HTML comments are skipped so commented-out examples never fire.
+          expired=$(awk -v today="$today" '
+            /<!--/ { incomment=1 }
+            /-->/  { incomment=0; next }
+            incomment { next }
+            /^### / { heading=$0; sub(/^### +/, "", heading) }
+            /\*\*Review by:\*\*/ {
+              if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/)) {
+                d = substr($0, RSTART, RLENGTH)
+                if (d < today) printf "| %s | %s |\n", heading, d
+              }
+            }
+          ' "$FILE")
+
+          if [ -z "$expired" ]; then
+            echo "No holds past review-by."
+          else
+            echo "Expired holds found:"
+            echo "$expired"
+          fi
+
+          {
+            echo "expired<<SCAN_EOF"
+            echo "$expired"
+            echo "SCAN_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create, update, or close the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EXPIRED: ${{ steps.scan.outputs.expired }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="Live holds past review-by"
+
+          existing=$(gh issue list --state open --json number,title \
+            --search "\"$TITLE\" in:title" \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+
+          if [ -z "${EXPIRED//[[:space:]]/}" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" \
+                --comment "Every hold's review-by date is current again — closing automatically."
+              echo "Closed issue #$existing."
+            else
+              echo "Nothing expired and no open issue — nothing to do."
+            fi
+            exit 0
+          fi
+
+          body=$(cat <<BODY
+          The daily live-holds check found holds in \`brand/live-holds.md\` past their review-by date (checked $(date -u +%F), UTC).
+
+          | Hold | Review by |
+          |---|---|
+          $EXPIRED
+
+          Per the rules in \`brand/live-holds.md\`, an expired date never means the hold has lifted — for each hold above, confirm with the account team and then either:
+
+          - **renew** the review-by date if the hold still stands,
+          - **lift** it — delete the hold's block and record the removal in \`brand/CHANGELOG.md\` — if its lift condition is met.
+
+          This issue is maintained by \`.github/workflows/holds-expiry-check.yml\`: it is updated on every run and closes itself once no hold is past review-by.
+          BODY
+          )
+
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body "$body" >/dev/null
+            echo "Updated issue #$existing."
+          else
+            gh issue create --title "$TITLE" --body "$body"
+          fi

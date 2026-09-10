@@ -1,13 +1,21 @@
 name: ClickUp issue sync
 
-# Issues on a kit repo are where the system talks to humans — the holds
-# expiry check and the pack-stale watch both open them — but account teams
-# live in ClickUp, not in GitHub notifications. This workflow keeps ClickUp
-# a live mirror of the kit's issues: opening an issue creates a task on the
-# kit's ClickUp list (assigned to the account manager), editing the issue
-# updates the task, closing the issue closes the task, reopening reopens it.
-# Nobody closes anything by hand in two places — the repo stays the source
-# of truth and ClickUp follows it.
+# Most issues on a kit repo are ops-facing and stay in GitHub — but some are
+# the account team's to act on (holds past review-by), and account teams
+# live in ClickUp, not in GitHub notifications. This workflow mirrors the
+# issues that carry the `clickup` label onto the kit's ClickUp list: opening
+# a labelled issue creates a task (assigned to the account manager), editing
+# the issue updates the task, closing the issue closes the task, reopening
+# reopens it. Nobody closes anything by hand in two places — the repo stays
+# the source of truth and ClickUp follows it.
+#
+# The mirror is OPT-IN by design: nothing reaches the account team's list
+# unless an issue is deliberately labelled, so a new check added later can
+# never spam it by default. The holds expiry check labels its own tracking
+# issue, and a human can add the label to any other issue worth an AM's
+# attention. The label gates task CREATION only — once an issue is mirrored,
+# every later event follows through regardless of labels, so a stripped
+# label can never orphan an open task in ClickUp.
 #
 # Per-kit wiring lives in .github/clickup-sync.yml (which list, and
 # optionally who to assign). The template ships that file with empty values,
@@ -19,15 +27,13 @@ name: ClickUp issue sync
 # The mirror is stateless: after creating a task, the workflow posts one
 # comment on the issue carrying the task link plus a machine-readable
 # marker (<!-- clickup-task:ID -->), and later events find the task through
-# that marker. An issue opened before the sync was enabled therefore
-# backfills on its next edit or reopen — the scheduled checks re-edit their
-# issues daily, so pre-existing tracking issues catch up within a day.
-#
-# Issues that should stay out of ClickUp get the `no-clickup` label.
+# that marker. An already-open issue therefore mirrors the moment it gains
+# the label (the `labeled` trigger), and pre-existing tracking issues catch
+# up within a day — the daily checks re-label their issues on every update.
 
 on:
   issues:
-    types: [opened, edited, reopened, closed]
+    types: [opened, edited, labeled, reopened, closed]
 
 permissions:
   contents: read
@@ -81,12 +87,6 @@ jobs:
             echo "list_id is empty in $CFG — sync not enabled on this kit; skipping."
             exit 0
           fi
-
-          case ",$ISSUE_LABELS," in
-            *,no-clickup,*)
-              echo "Issue #$ISSUE_NUMBER is labelled no-clickup — skipping."
-              exit 0 ;;
-          esac
 
           if [ -z "${CLICKUP_TOKEN//[[:space:]]/}" ]; then
             echo "::error::$CFG names a ClickUp list but the CLICKUP_TOKEN secret is not set — the sync cannot run. See the clickup-issue-sync runbook in the private ops repo."
@@ -147,7 +147,7 @@ jobs:
               echo "Closed ClickUp task $TASK_ID (status: $CLOSED_STATUS)."
               ;;
 
-            opened|edited|reopened)
+            opened|edited|labeled|reopened)
               if [ -n "$TASK_ID" ]; then
                 api PUT "/task/$TASK_ID" \
                   "$(jq -n --arg n "$TASK_NAME" --arg d "$DESCRIPTION" \
@@ -162,6 +162,14 @@ jobs:
                   fi
                 fi
               else
+                # No mirror yet: creation is opt-in — only issues labelled
+                # `clickup` reach the account team's list.
+                case ",$ISSUE_LABELS," in
+                  *,clickup,*) ;;
+                  *)
+                    echo "Issue #$ISSUE_NUMBER has no clickup label and no existing mirror — skipping (the mirror is opt-in)."
+                    exit 0 ;;
+                esac
                 if [ "$ISSUE_STATE" != "open" ]; then
                   echo "Issue #$ISSUE_NUMBER is $ISSUE_STATE and was never mirrored — skipping."
                   exit 0

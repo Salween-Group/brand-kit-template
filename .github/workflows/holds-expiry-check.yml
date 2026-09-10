@@ -115,9 +115,18 @@ jobs:
           BODY
           )
 
+          # Expired holds are the account team's to triage, so this issue
+          # carries the `clickup` label — the opt-in marker the ClickUp issue
+          # sync mirrors from (see .github/workflows/clickup-issue-sync.yml).
+          # Ensure the label exists, then apply it on create AND update, so
+          # issues opened before the sync existed self-heal on the next run.
+          gh label create clickup \
+            --description "Mirror this issue to the account team's ClickUp list" \
+            --color 7057ff --force >/dev/null 2>&1 || true
+
           if [ -n "$existing" ]; then
-            gh issue edit "$existing" --body "$body" >/dev/null
+            gh issue edit "$existing" --body "$body" --add-label clickup >/dev/null
             echo "Updated issue #$existing."
           else
-            gh issue create --title "$TITLE" --body "$body"
+            gh issue create --title "$TITLE" --body "$body" --label clickup
           fi

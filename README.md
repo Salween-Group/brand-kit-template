@@ -89,16 +89,20 @@ project chat and crowds out the content.
   maintains a single tracking issue listing any holds past review-by, for the account
   team to renew or lift. The issue closes itself once every date is current. An expired
   date never means a hold has lifted — the workflow surfaces it; a human confirms.
-- **Kit issues mirror into the account team's task tracker.** The issues those checks
-  open are only useful if the account team sees them, and account teams live in
-  ClickUp, not GitHub notifications — so `.github/workflows/clickup-issue-sync.yml`
-  keeps ClickUp a live mirror of the kit's issues: opening an issue creates a task on
-  the kit's ClickUp list (assigned to the account manager), editing the issue updates
-  the task, closing the issue closes the task. Nobody closes anything by hand in two
-  places; the repo stays the source of truth. Per-kit wiring (which list, who to
-  assign) lives in `.github/clickup-sync.yml`, shipped empty here so the sync
-  self-skips until a kit configures it; the API token is a per-repo Actions secret,
-  never a committed file. Label an issue `no-clickup` to keep it out of ClickUp.
+- **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are
+  ops-facing and stay in GitHub, but holds past review-by are the account team's to
+  triage, and account teams live in ClickUp, not GitHub notifications. So
+  `.github/workflows/clickup-issue-sync.yml` mirrors issues carrying the `clickup`
+  label onto the kit's ClickUp list: opening a labelled issue creates a task (assigned
+  to the account manager), editing the issue updates the task, closing the issue
+  closes the task. Nobody closes anything by hand in two places; the repo stays the
+  source of truth. The holds-expiry check labels its tracking issue automatically;
+  add the label by hand to mirror anything else. Opt-in means a future check can
+  never spam the account team's list by default — and the label gates task creation
+  only, so once mirrored, an issue follows through to close even if the label is
+  removed. Per-kit wiring (which list, who to assign) lives in
+  `.github/clickup-sync.yml`, shipped empty here so the sync self-skips until a kit
+  configures it; the API token is a per-repo Actions secret, never a committed file.
 
 ### File structure
 

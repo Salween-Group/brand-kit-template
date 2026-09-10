@@ -74,7 +74,9 @@ project chat and crowds out the content.
   brings the pack current. The pack is exempt from the retired-language grep (it must
   quote retired phrases verbatim to enforce them). The last mile — re-uploading the
   regenerated pack into the custom GPT or skill — is a human step; the pack's stamp is
-  how you verify a deployed copy is current.
+  how you verify a deployed copy is current. The full method — pack anatomy, the
+  shareable filter, and generation discipline — is documented in
+  [`docs/voice-guardian-pack.md`](docs/voice-guardian-pack.md).
 - **Hold expiry is machine-watched.** Every hold in `brand/live-holds.md` carries a
   review-by date, and holds are expected to expire and be removed — so a scheduled
   workflow (`.github/workflows/holds-expiry-check.yml`) scans the file daily and
@@ -105,6 +107,8 @@ brand-kit-template/
 │       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml
 │       └── pack-stale-on-main.yml
+├── docs/
+│   └── voice-guardian-pack.md
 ├── project-instructions.md
 ├── README.md
 └── LICENSE

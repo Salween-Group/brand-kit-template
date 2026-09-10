@@ -89,6 +89,18 @@ project chat and crowds out the content.
   maintains a single tracking issue listing any holds past review-by, for the account
   team to renew or lift. The issue closes itself once every date is current. An expired
   date never means a hold has lifted — the workflow surfaces it; a human confirms.
+- **The kit's structure is machine-checked.** Cross-references between kit files
+  rot silently as holds are added and deleted, so a lint workflow
+  (`.github/workflows/kit-lint.yml`) fails any push or PR that breaks the kit's
+  referential integrity: every `brand/live-holds.md` → "Name" pointer must
+  prefix-match a real hold heading (quotes normalised, so a heading's status
+  suffix can change without breaking pointers — but deleting a hold without
+  cleaning up its pointers fails the build); every hold must carry Scope, Lift
+  condition, a real and plausible Review-by date, and Source; core files must
+  carry real `last_updated` (and version) metadata; and the evidence register
+  must use its declared status vocabulary. History and build products
+  (`brand/CHANGELOG.md`, the voice-guardian pack) are exempt from the pointer
+  check. On this template, placeholder values downgrade to warnings.
 - **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are
   ops-facing and stay in GitHub, but holds past review-by are the account team's to
   triage, and account teams live in ClickUp, not GitHub notifications. So
@@ -125,6 +137,7 @@ brand-kit-template/
 │   ├── clickup-sync.yml   (per-kit ClickUp wiring — empty in the template)
 │   └── workflows/
 │       ├── retired-language-check.yml
+│       ├── kit-lint.yml
 │       ├── client-leakage-guard.yml   (this repo only — not part of the kit schema)
 │       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml

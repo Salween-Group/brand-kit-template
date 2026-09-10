@@ -4,6 +4,7 @@
   client:        [Client Name]
   version:       1.0
   last_updated:  YYYY-MM-DD
+  review_cadence: per-rebrand   # rebuilt when the design system changes; event-driven, not date-checked
   maintained_by: [Your Name / Team]
 -->
 

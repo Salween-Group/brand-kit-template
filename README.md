@@ -89,6 +89,19 @@ project chat and crowds out the content.
   maintains a single tracking issue listing any holds past review-by, for the account
   team to renew or lift. The issue closes itself once every date is current. An expired
   date never means a hold has lifted — the workflow surfaces it; a human confirms.
+- **File freshness is machine-watched too.** Every core kit file declares a
+  `review_cadence:` in its metadata block. Time-based values (`quarterly`, `monthly`,
+  `annual`, `<N>d`) are date-checked daily by a second job in the same
+  `holds-expiry-check.yml` workflow; event-driven values (`per-sync` — the file is
+  refreshed by the sync loop; `per-rebrand`) and `exempt` (live-holds, whose per-hold
+  review-by dates are watched separately) document the freshness contract without a
+  date check. The clock reads `last_reviewed:` when present, falling back to
+  `last_updated:` — so a review that concludes "still accurate, no changes" is recorded
+  honestly by setting `last_reviewed`, never by faking a content change. Files past
+  their cadence land in a single self-closing tracking issue, mirrored to the account
+  team's ClickUp list like the holds issue. This turns owned review cadences from a
+  calendar promise into a mechanism — stale calibration sources (an aging
+  `approved-copy-samples.md` is the canonical case) get flagged where the team works.
 - **The kit's structure is machine-checked.** Cross-references between kit files
   rot silently as holds are added and deleted, so a lint workflow
   (`.github/workflows/kit-lint.yml`) fails any push or PR that breaks the kit's
@@ -97,8 +110,9 @@ project chat and crowds out the content.
   suffix can change without breaking pointers — but deleting a hold without
   cleaning up its pointers fails the build); every hold must carry Scope, Lift
   condition, a real and plausible Review-by date, and Source; core files must
-  carry real `last_updated` (and version) metadata; and the evidence register
-  must use its declared status vocabulary. History and build products
+  carry real `last_updated` (and version) metadata plus a `review_cadence` from
+  the freshness vocabulary (and a real `last_reviewed`, when present); and the
+  evidence register must use its declared status vocabulary. History and build products
   (`brand/CHANGELOG.md`, the voice-guardian pack) are exempt from the pointer
   check. On this template, placeholder values downgrade to warnings.
 - **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are

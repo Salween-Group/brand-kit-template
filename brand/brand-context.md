@@ -4,6 +4,7 @@
   client:        [Client Name]
   version:       1.0
   last_updated:  YYYY-MM-DD
+  review_cadence: per-sync   # refreshed by the sync loop; event-driven, not date-checked
   maintained_by: [Your Name / Team]
   # Version history lives in brand/CHANGELOG.md. Never accumulate change narratives in
   # this block — this file is loaded into every project chat, and history bloats it.

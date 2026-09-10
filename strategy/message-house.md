@@ -5,6 +5,7 @@
   version:       v1 (document identity — bump only on a structural rebuild)
   status:        DRAFT | FINAL — [approver name] sign-off [date]
   last_updated:  YYYY-MM-DD
+  review_cadence: per-rebrand   # rebuilt on a strategic reframe; event-driven, not date-checked
   maintained_by: [Your Name]
   canonical:     This markdown file is the source of truth. Any branded .docx/PDF
                  is a generated deliverable — edit this file, then regenerate.

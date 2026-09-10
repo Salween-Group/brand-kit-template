@@ -2,6 +2,7 @@
 
 <!--
   last_updated: YYYY-MM-DD
+  review_cadence: exempt   # every hold carries its own review-by date - the expiry watch covers this file
 
   Time-bound operational rules: embargoes, hold-until-announced wins, dates awaiting
   verification, proof points that cannot be used YET, and merged strategy changes still

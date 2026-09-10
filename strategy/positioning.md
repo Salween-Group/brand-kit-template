@@ -5,6 +5,7 @@
   version:       v1 (document identity — bump only on a strategic reframe)
   status:        DRAFT | FINAL — [approver name] sign-off [date] on [which items]
   last_updated:  YYYY-MM-DD
+  review_cadence: per-rebrand   # rebuilt on a strategic reframe; event-driven, not date-checked
   maintained_by: [Your Name]
   framework:     [The positioning framework this document applies — e.g.
                  "April Dunford — Obviously Awesome (five-component positioning)"

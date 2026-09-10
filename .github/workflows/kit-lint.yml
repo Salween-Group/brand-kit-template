@@ -16,7 +16,11 @@ name: Kit lint
 #      far-future date hides the hold from the expiry watch), and Source.
 #   3. Metadata is real. Core kit files carry last_updated (and the brand
 #      files a version) with a valid YYYY-MM-DD — never-set placeholders and
-#      free-text dates fail.
+#      free-text dates fail. review_cadence must use the freshness vocabulary
+#      (quarterly | monthly | annual | <N>d | per-sync | per-rebrand | exempt;
+#      missing is a warning so adoption can roll out gradually), and
+#      last_reviewed, when present, must be a real date — the cadence watch
+#      in holds-expiry-check.yml reads both.
 #   4. The evidence register uses its own vocabulary. Status must be one of
 #      usable | on hold (see live-holds) | gap-to-close | retired, and every
 #      on-hold row must point at live-holds.
@@ -153,7 +157,7 @@ jobs:
           # ---------- 3. Metadata hygiene ----------
 
           need_meta() { # file require_version(0|1)
-            local f=$1 want_version=$2 head lu v
+            local f=$1 want_version=$2 head lu v rc lr
             [ -f "$f" ] || return 0
             head=$(head -40 "$f")
             lu=$(printf '%s\n' "$head" | sed -n 's/^[[:space:]]*last_updated:[[:space:]]*//p' | head -1 | tr -d '[:space:]')
@@ -167,6 +171,18 @@ jobs:
             if [ "$want_version" = 1 ]; then
               v=$(printf '%s\n' "$head" | grep -c '^[[:space:]]*version:' || true)
               if [ "$v" -eq 0 ]; then fail "$f — metadata block has no version field"; fi
+            fi
+            # Freshness-watch fields (see holds-expiry-check.yml, cadence job).
+            # Values may carry an inline comment, so take the first word only.
+            rc=$(printf '%s\n' "$head" | sed -n 's/^[[:space:]]*review_cadence:[[:space:]]*//p' | head -1 | awk '{print $1}')
+            if [ -z "$rc" ]; then
+              echo "::warning::$f — metadata block has no review_cadence field (the freshness watch skips this file; see README)"
+            elif ! printf '%s' "$rc" | grep -qE '^(quarterly|monthly|annual|[0-9]+d|per-sync|per-rebrand|exempt)$'; then
+              fail "$f — review_cadence \"$rc\" is not in the cadence vocabulary (quarterly | monthly | annual | <N>d | per-sync | per-rebrand | exempt)"
+            fi
+            lr=$(printf '%s\n' "$head" | sed -n 's/^[[:space:]]*last_reviewed:[[:space:]]*//p' | head -1 | awk '{print $1}')
+            if [ -n "$lr" ] && [ "$lr" != "YYYY-MM-DD" ] && ! valid_date "$lr"; then
+              fail "$f — last_reviewed is not a valid YYYY-MM-DD date: $lr"
             fi
           }
 

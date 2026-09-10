@@ -1,0 +1,18 @@
+# ClickUp home for this kit's GitHub issues — read by
+# .github/workflows/clickup-issue-sync.yml.
+#
+# The template ships these values empty, and the sync self-skips until a kit
+# fills them in. To enable it on a client kit:
+#
+#   list_id:     the ClickUp list that should receive mirrored tasks
+#                (usually the client's current retainer list)
+#   assignee_id: numeric ClickUp user id of the account manager, who is
+#                assigned every mirrored task (optional — leave empty to
+#                create tasks unassigned)
+#
+# ...and set the kit repo's CLICKUP_TOKEN Actions secret. Full steps, the
+# fleet's repo→list mapping, and how to look up ids live in the private ops
+# repo's clickup-issue-sync runbook.
+
+list_id:
+assignee_id:

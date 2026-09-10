@@ -89,6 +89,16 @@ project chat and crowds out the content.
   maintains a single tracking issue listing any holds past review-by, for the account
   team to renew or lift. The issue closes itself once every date is current. An expired
   date never means a hold has lifted — the workflow surfaces it; a human confirms.
+- **Kit issues mirror into the account team's task tracker.** The issues those checks
+  open are only useful if the account team sees them, and account teams live in
+  ClickUp, not GitHub notifications — so `.github/workflows/clickup-issue-sync.yml`
+  keeps ClickUp a live mirror of the kit's issues: opening an issue creates a task on
+  the kit's ClickUp list (assigned to the account manager), editing the issue updates
+  the task, closing the issue closes the task. Nobody closes anything by hand in two
+  places; the repo stays the source of truth. Per-kit wiring (which list, who to
+  assign) lives in `.github/clickup-sync.yml`, shipped empty here so the sync
+  self-skips until a kit configures it; the API token is a per-repo Actions secret,
+  never a committed file. Label an issue `no-clickup` to keep it out of ClickUp.
 
 ### File structure
 
@@ -108,12 +118,14 @@ brand-kit-template/
 │   ├── evidence.md
 │   └── approved-copy-samples.md
 ├── .github/
+│   ├── clickup-sync.yml   (per-kit ClickUp wiring — empty in the template)
 │   └── workflows/
 │       ├── retired-language-check.yml
 │       ├── client-leakage-guard.yml   (this repo only — not part of the kit schema)
 │       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml
-│       └── pack-stale-on-main.yml
+│       ├── pack-stale-on-main.yml
+│       └── clickup-issue-sync.yml
 ├── docs/
 │   └── voice-guardian-pack.md
 ├── project-instructions.md

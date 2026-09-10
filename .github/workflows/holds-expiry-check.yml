@@ -14,6 +14,19 @@ name: Live-holds expiry check
 #
 # Safe on kits without dated holds: only real YYYY-MM-DD dates match, so the
 # template's placeholder never fires, and a missing file skips the run.
+#
+# A second job watches FILE freshness the same way: every core kit file
+# declares a `review_cadence:` in its metadata block, and files whose
+# time-based cadence has lapsed (measured from `last_reviewed:`, falling back
+# to `last_updated:`) land in their own self-closing tracking issue.
+# Event-driven cadences (per-sync, per-rebrand) and `exempt` are never
+# date-checked. Kit lint validates the field's vocabulary; this job only
+# reads it.
+#
+# NOTE: the workflow name "Live-holds expiry check" is load-bearing — the
+# ClickUp issue sync's reconcile pass chains on it by exact name via
+# workflow_run (see clickup-issue-sync.yml). Renaming this workflow silently
+# breaks that chain.
 
 on:
   schedule:
@@ -120,6 +133,144 @@ jobs:
           # sync mirrors from (see .github/workflows/clickup-issue-sync.yml).
           # Ensure the label exists, then apply it on create AND update, so
           # issues opened before the sync existed self-heal on the next run.
+          gh label create clickup \
+            --description "Mirror this issue to the account team's ClickUp list" \
+            --color 7057ff --force >/dev/null 2>&1 || true
+
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body "$body" --add-label clickup >/dev/null
+            echo "Updated issue #$existing."
+          else
+            gh issue create --title "$TITLE" --body "$body" --label clickup
+          fi
+
+  cadence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan kit files for lapsed review cadences
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # The template's own files are placeholder content — a cadence
+          # review is meaningless there, so the template never flags itself.
+          if [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ]; then
+            echo "Template repository — cadence check skipped."
+            echo "stale=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          NOW=$(date -u +%s)
+
+          # Echo the epoch for a real YYYY-MM-DD; echo nothing otherwise.
+          # Round-trip guard: no silent normalisation (2026-02-30 is invalid).
+          epoch_of() {
+            if [ "$(date -ud "$1" +%F 2>/dev/null)" = "$1" ]; then
+              date -ud "$1" +%s
+            fi
+            return 0
+          }
+
+          stale=""
+          while IFS= read -r f; do
+            meta=$(head -40 "$f")
+            cad=$(printf '%s\n' "$meta" | sed -n 's/^[[:space:]]*review_cadence:[[:space:]]*//p' | head -1 | awk '{print $1}')
+            if [ -z "$cad" ]; then continue; fi
+
+            days=""
+            case "$cad" in
+              quarterly) days=90 ;;
+              monthly)   days=30 ;;
+              annual)    days=365 ;;
+              per-sync|per-rebrand|exempt) continue ;;
+              *)
+                if printf '%s' "$cad" | grep -qE '^[0-9]+d$'; then
+                  days=${cad%d}
+                else
+                  # Kit lint validates the vocabulary; the watch just skips.
+                  echo "::warning::$f — unknown review_cadence \"$cad\"; skipped."
+                  continue
+                fi ;;
+            esac
+
+            lr=$(printf '%s\n' "$meta" | sed -n 's/^[[:space:]]*last_reviewed:[[:space:]]*//p' | head -1 | awk '{print $1}')
+            lu=$(printf '%s\n' "$meta" | sed -n 's/^[[:space:]]*last_updated:[[:space:]]*//p' | head -1 | awk '{print $1}')
+
+            # The clock reads last_reviewed when present, else last_updated —
+            # so a "still accurate, no changes" review resets the clock
+            # honestly, without faking a content change.
+            eff=""; basis=""
+            if [ -n "$lr" ]; then eff=$(epoch_of "$lr"); basis="last_reviewed $lr"; fi
+            if [ -z "$eff" ] && [ -n "$lu" ]; then eff=$(epoch_of "$lu"); basis="last_updated $lu"; fi
+            if [ -z "$eff" ]; then continue; fi   # invalid dates are kit lint's to fail
+
+            age=$(( (NOW - eff) / 86400 ))
+            if [ "$age" -gt "$days" ]; then
+              stale="${stale}| \`$f\` | $cad | $basis | $(( age - days )) |"$'\n'
+            fi
+          done < <(git ls-files 'brand/*.md' 'strategy/*.md' 'reference/*.md' \
+            | grep -v -E '(CHANGELOG\.md|voice-guardian-pack\.md)$' || true)
+
+          if [ -z "${stale//[[:space:]]/}" ]; then
+            echo "No files past their review cadence."
+          else
+            echo "Files past review cadence:"
+            echo "$stale"
+          fi
+
+          {
+            echo "stale<<SCAN_EOF"
+            echo "$stale"
+            echo "SCAN_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create, update, or close the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          STALE: ${{ steps.scan.outputs.stale }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="Kit files past review cadence"
+
+          existing=$(gh issue list --state open --json number,title \
+            --search "\"$TITLE\" in:title" \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+
+          if [ -z "${STALE//[[:space:]]/}" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" \
+                --comment "Every file is inside its review cadence again — closing automatically."
+              echo "Closed issue #$existing."
+            else
+              echo "Nothing stale and no open issue — nothing to do."
+            fi
+            exit 0
+          fi
+
+          body=$(cat <<BODY
+          The daily freshness check found kit files past the review cadence declared in their metadata block (checked $(date -u +%F), UTC).
+
+          | File | Cadence | Clock basis | Days overdue |
+          |---|---|---|---|
+          $STALE
+
+          A lapsed cadence never means the content is wrong — it means nobody has confirmed it recently. For each file above, review it with the account team and then either:
+
+          - **refresh** the content (for \`reference/approved-copy-samples.md\`, add recent approved pieces and retire samples that no longer reflect the current voice), or
+          - **confirm** it is still accurate as-is, and record that by setting \`last_reviewed: <today>\` in the file's metadata block.
+
+          Either lands through the kit's normal PR flow. This issue is maintained by \`.github/workflows/holds-expiry-check.yml\` (cadence job): it is updated on every run and closes itself once no file is past its cadence.
+          BODY
+          )
+
+          # Sample and file staleness is the account team's to action, so this
+          # issue carries the `clickup` label — the opt-in marker the ClickUp
+          # issue sync mirrors from (see clickup-issue-sync.yml).
           gh label create clickup \
             --description "Mirror this issue to the account team's ClickUp list" \
             --color 7057ff --force >/dev/null 2>&1 || true

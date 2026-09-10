@@ -4,6 +4,7 @@
   client:        [Client Name]
   version:       1.0
   last_updated:  YYYY-MM-DD
+  review_cadence: quarterly   # date-checked daily; flagged when last_reviewed (else last_updated) lapses
   maintained_by: [Your Name / Team]
 -->
 

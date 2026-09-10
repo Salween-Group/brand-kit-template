@@ -2,6 +2,7 @@
 
 <!--
   last_updated: YYYY-MM-DD
+  review_cadence: per-sync   # refreshed by the sync loop; event-driven, not date-checked
 
   Phrases that USED to be canonical and are now superseded — a replaced hero,
   a retired vocabulary ruling, a dead claim. Distinct from the "Banned Words"

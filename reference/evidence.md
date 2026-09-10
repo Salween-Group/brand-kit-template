@@ -2,6 +2,7 @@
 
 <!--
   last_updated: YYYY-MM-DD
+  review_cadence: per-sync   # refreshed by the sync loop; event-driven, not date-checked
 
   The single register of every claim, statistic, and citation the kit uses.
   Proof points in strategy/positioning.md, foundation bullets in

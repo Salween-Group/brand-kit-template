@@ -137,7 +137,7 @@ jobs:
           TASK_NAME="[Brand kit] $ISSUE_TITLE (#$ISSUE_NUMBER)"
           DESCRIPTION="**Mirrored from GitHub:** $ISSUE_URL
 
-          This task follows the issue: it updates when the issue is edited and closes when the issue closes. The fix itself lands in the kit repo — closing the issue there is what closes this task.
+          This task relates to an issue recently created in the Brand Kit in GitHub: it updates when that issue is edited and closes when that issue closes. The fix needs to land in the kit repo so update your ops team when the questions below are answered. Ops closing the issue there is what closes this task.
 
           ---
 

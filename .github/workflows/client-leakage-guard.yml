@@ -1,0 +1,85 @@
+name: Client-leakage guard
+
+# This repository is public by design — it demonstrates the brand-kit method.
+# Client names and internal repo/tooling references must never appear in it,
+# and that hygiene must be CI, not vigilance: client references have reached
+# template-bound files before via improvements backported from client kits.
+#
+# The term list is confidential in itself, so it is NOT committed here. It is
+# read from the CLIENT_LEAKAGE_TERMS secret (one term per line; blank lines
+# and full-line # comments ignored); the canonical copy is maintained in the
+# private ops repo. Matching is case-insensitive, whole-word, literal —
+# whole-word matters: short client names can false-match inside ordinary
+# words as substrings.
+#
+# On a hit, the failure names the file and a term INDEX only — never the term
+# or the matching line, because Actions logs on a public repo are
+# world-readable. Missing secret: fails on push (a silently-skipped guard
+# showing green is worse than a red build), skips with a warning on PRs
+# (fork PRs never receive secrets).
+#
+# This guard belongs on brand-kit-template ONLY. Client kits legitimately
+# contain their own client's name — do not roll this workflow out to them.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Grep tracked files for confidential terms
+        env:
+          TERMS: ${{ secrets.CLIENT_LEAKAGE_TERMS }}
+          EVENT: ${{ github.event_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TERMS//[[:space:]]/}" ]; then
+            if [ "$EVENT" = "pull_request" ]; then
+              echo "::warning::CLIENT_LEAKAGE_TERMS unavailable (fork PR, or secret unset) — leakage guard skipped. The push run after merge will enforce it."
+              exit 0
+            fi
+            echo "::error::CLIENT_LEAKAGE_TERMS secret is not set — the leakage guard cannot run. Set it from the canonical list in the private ops repo (see its leakage-guard runbook)."
+            exit 1
+          fi
+
+          mapfile -t files < <(git ls-files)
+
+          fail=0
+          idx=0
+          checked=0
+          while IFS= read -r term; do
+            # Strip full-line comments and surrounding whitespace.
+            case "$term" in \#*) continue ;; esac
+            term="$(printf '%s' "$term" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            [ -z "$term" ] && continue
+            idx=$((idx+1))
+            checked=$((checked+1))
+            # -l: filenames only. Never print the term or the matching line —
+            # logs on a public repository are world-readable.
+            hits=$(grep -ilwF -- "$term" "${files[@]}" || true)
+            if [ -n "$hits" ]; then
+              echo "::error::Confidential term #$idx (see the canonical list in the ops repo) found in:"
+              echo "$hits"
+              fail=1
+            fi
+          done <<< "$TERMS"
+
+          if [ "$checked" -eq 0 ]; then
+            echo "::error::CLIENT_LEAKAGE_TERMS contains no usable terms after stripping comments — fix the secret."
+            exit 1
+          fi
+
+          if [ "$fail" -eq 0 ]; then
+            echo "No confidential terms found ($checked terms checked across ${#files[@]} tracked files)."
+          fi
+          exit "$fail"

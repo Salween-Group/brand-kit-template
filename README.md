@@ -77,6 +77,12 @@ project chat and crowds out the content.
   how you verify a deployed copy is current. The full method — pack anatomy, the
   shareable filter, and generation discipline — is documented in
   [`docs/voice-guardian-pack.md`](docs/voice-guardian-pack.md).
+- **This public repo is guarded against confidential references.** This template is
+  deliberately public, so a CI check (`.github/workflows/client-leakage-guard.yml` —
+  this repository only, never client kits) greps every tracked file for a confidential
+  term list held outside the repo and fails the build on a hit, reporting the file but
+  never the term. Improvements backported from client kits are the known leak path;
+  the guard makes that a build failure instead of an after-the-fact scrub.
 - **Hold expiry is machine-watched.** Every hold in `brand/live-holds.md` carries a
   review-by date, and holds are expected to expire and be removed — so a scheduled
   workflow (`.github/workflows/holds-expiry-check.yml`) scans the file daily and
@@ -104,6 +110,7 @@ brand-kit-template/
 ├── .github/
 │   └── workflows/
 │       ├── retired-language-check.yml
+│       ├── client-leakage-guard.yml   (this repo only — not part of the kit schema)
 │       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml
 │       └── pack-stale-on-main.yml

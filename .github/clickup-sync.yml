@@ -4,11 +4,19 @@
 # The template ships these values empty, and the sync self-skips until a kit
 # fills them in. To enable it on a client kit:
 #
-#   list_id:     the ClickUp list that should receive mirrored tasks
-#                (usually the client's current retainer list)
-#   assignee_id: numeric ClickUp user id of the account manager, who is
-#                assigned every mirrored task (optional — leave empty to
-#                create tasks unassigned)
+#   list_id:       the ClickUp list that should receive mirrored tasks
+#                  (usually the client's current retainer list)
+#   assignee_id:   numeric ClickUp user id of the account manager, who is
+#                  assigned every mirrored task (optional — leave empty to
+#                  create tasks unassigned)
+#   due_in_days:   optional whole number; new tasks get a due date this many
+#                  days after creation (applied at creation only — later
+#                  issue edits never touch the due date)
+#   custom_fields: optional ONE-LINE JSON array passed verbatim to the
+#                  ClickUp create-task call, for workspace custom fields —
+#                  e.g. [{"id":"<field uuid>","value":"<dropdown option uuid>"}].
+#                  Every field must exist on the target list. Creation only.
+#                  No inline comment on this line — the value is read raw.
 #
 # ...and set the kit repo's CLICKUP_TOKEN Actions secret. Full steps, the
 # fleet's repo→list mapping, and how to look up ids live in the private ops
@@ -16,3 +24,5 @@
 
 list_id:
 assignee_id:
+due_in_days:
+custom_fields:

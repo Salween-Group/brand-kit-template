@@ -17,9 +17,13 @@ name: ClickUp issue sync
 # every later event follows through regardless of labels, so a stripped
 # label can never orphan an open task in ClickUp.
 #
-# Per-kit wiring lives in .github/clickup-sync.yml (which list, and
-# optionally who to assign). The template ships that file with empty values,
-# so this workflow self-skips until a kit fills it in. The ClickUp API token
+# Per-kit wiring lives in .github/clickup-sync.yml: which list, optionally
+# who to assign, and optional task defaults applied at CREATION only — a due
+# date N days out (due_in_days) and workspace custom fields (custom_fields,
+# a one-line JSON array passed to the ClickUp create call verbatim, so kits
+# can carry workspace-specific field values the template never hard-codes).
+# The template ships that file with empty values, so this workflow
+# self-skips until a kit fills it in. The ClickUp API token
 # is the CLICKUP_TOKEN repo Actions secret — never a committed file. Setup
 # steps and the fleet's repo→list mapping are documented in the private ops
 # repo's clickup-issue-sync runbook.
@@ -80,8 +84,16 @@ jobs:
               | sed 's/[[:space:]]*#.*$//' | tr -d '"[:space:]'
           }
 
+          # Raw variant for values that must survive untouched (JSON):
+          # no comment stripping, no quote stripping — one line, verbatim.
+          cfg_get_raw() {
+            sed -n "s/^$1:[[:space:]]*//p" "$CFG" | head -1
+          }
+
           LIST_ID=$(cfg_get list_id)
           ASSIGNEE_ID=$(cfg_get assignee_id)
+          DUE_IN_DAYS=$(cfg_get due_in_days)
+          CUSTOM_FIELDS_JSON=$(cfg_get_raw custom_fields)
 
           if [ -z "$LIST_ID" ]; then
             echo "list_id is empty in $CFG — sync not enabled on this kit; skipping."
@@ -180,10 +192,32 @@ jobs:
                 elif [ -n "$ASSIGNEE_ID" ]; then
                   echo "::warning::assignee_id in $CFG is not a numeric ClickUp user id — creating the task unassigned."
                 fi
-                RESP=$(api POST "/list/$LIST_ID/task" \
-                  "$(jq -n --arg n "$TASK_NAME" --arg d "$DESCRIPTION" \
-                       --argjson a "$ASSIGNEES" \
-                       '{name:$n, markdown_description:$d, assignees:$a}')")
+                PAYLOAD=$(jq -n --arg n "$TASK_NAME" --arg d "$DESCRIPTION" \
+                  --argjson a "$ASSIGNEES" \
+                  '{name:$n, markdown_description:$d, assignees:$a}')
+
+                # Optional creation-time defaults from the kit config. Both
+                # apply to NEW tasks only — later edits never touch them, so
+                # the account team can adjust a task without the next issue
+                # edit stomping their changes.
+                if printf '%s' "$DUE_IN_DAYS" | grep -Eq '^[0-9]+$'; then
+                  DUE_MS=$(( ($(date +%s) + DUE_IN_DAYS * 86400) * 1000 ))
+                  PAYLOAD=$(printf '%s' "$PAYLOAD" \
+                    | jq --argjson due "$DUE_MS" '. + {due_date:$due, due_date_time:false}')
+                elif [ -n "$DUE_IN_DAYS" ]; then
+                  echo "::warning::due_in_days in $CFG is not a whole number — creating the task without a due date."
+                fi
+
+                if [ -n "${CUSTOM_FIELDS_JSON//[[:space:]]/}" ]; then
+                  if printf '%s' "$CUSTOM_FIELDS_JSON" | jq -e 'type=="array"' >/dev/null 2>&1; then
+                    PAYLOAD=$(printf '%s' "$PAYLOAD" \
+                      | jq --argjson cf "$CUSTOM_FIELDS_JSON" '. + {custom_fields:$cf}')
+                  else
+                    echo "::warning::custom_fields in $CFG is not a valid one-line JSON array — creating the task without custom fields."
+                  fi
+                fi
+
+                RESP=$(api POST "/list/$LIST_ID/task" "$PAYLOAD")
                 TASK_ID=$(printf '%s' "$RESP" | jq -r .id)
                 TASK_URL=$(printf '%s' "$RESP" | jq -r .url)
                 gh issue comment "$ISSUE_NUMBER" -R "$GH_REPO" --body "Mirrored to ClickUp: $TASK_URL

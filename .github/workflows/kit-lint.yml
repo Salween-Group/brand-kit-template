@@ -1,0 +1,218 @@
+name: Kit lint
+
+# The other checks guard content (retired phrases) and freshness (holds
+# expiry, pack staleness). This one guards the kit's STRUCTURE — the
+# referential integrity between files that silently rots as holds are added
+# and deleted:
+#
+#   1. Hold pointers resolve. Brand files reference holds as
+#      `brand/live-holds.md` → "Name", where the quoted name is a PREFIX of
+#      a hold heading in that file (prefix, not exact, so a heading's status
+#      suffix can change without breaking every pointer). Deleting a hold
+#      without cleaning up its pointers fails the build — the sunset pass
+#      must be complete.
+#   2. Hold blocks are complete. Every active hold carries Scope, Lift
+#      condition, Review by (a real, plausible YYYY-MM-DD — an invalid or
+#      far-future date hides the hold from the expiry watch), and Source.
+#   3. Metadata is real. Core kit files carry last_updated (and the brand
+#      files a version) with a valid YYYY-MM-DD — never-set placeholders and
+#      free-text dates fail.
+#   4. The evidence register uses its own vocabulary. Status must be one of
+#      usable | on hold (see live-holds) | gap-to-close | retired, and every
+#      on-hold row must point at live-holds.
+#
+# Scope notes: build products, history, and docs are exempt from the pointer
+# check (CHANGELOG legitimately references deleted holds; the voice-guardian
+# pack is governed by its own freshness gates; README and docs/ document the
+# pointer convention with literal examples).
+# Missing files are skipped — file inventory is kit-doctor's job, not lint's.
+# On the template itself, placeholder values (YYYY-MM-DD) downgrade to
+# warnings so the scaffold stays green.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint kit structure
+        shell: bash
+        run: |
+          set -uo pipefail
+
+          # NOTE: GitHub's default bash shell injects -e, so every guard in
+          # this script must be a full if-statement — a bare `[ x ] && y`
+          # returning 1 kills the job silently.
+          TEMPLATE_MODE=0
+          if [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ]; then TEMPLATE_MODE=1; fi
+
+          FAILS=0
+          fail()  { echo "::error::$1"; FAILS=$((FAILS+1)); }
+          soft()  { if [ "$TEMPLATE_MODE" = 1 ]; then echo "::warning::$1 (template placeholder tolerated)"; else fail "$1"; fi; }
+
+          HOLDS="brand/live-holds.md"
+          NOW=$(date +%s)
+          HORIZON=$(( NOW + 366*86400 ))
+
+          # Validate a YYYY-MM-DD string: real calendar date, no silent
+          # normalisation (2026-02-30 must not pass as March 2).
+          valid_date() {
+            [ "$(date -d "$1" +%F 2>/dev/null)" = "$1" ]
+          }
+
+          # ---------- 1. Hold-pointer integrity ----------
+
+          # Quote characters inside hold names vary between pointer and
+          # heading (straight vs curly, single vs double), so both sides are
+          # matched with all quote characters stripped.
+          dequote() {
+            sed -e "s/[\"']//g" -e 's/“//g; s/”//g; s/‘//g; s/’//g'
+          }
+
+          HEADINGS_FILE=$(mktemp)
+          if [ -f "$HOLDS" ]; then
+            awk '
+              /<!--/ { inc=1 } /-->/ { inc=0; next } inc { next }
+              /^### / { sub(/^### +/, ""); print }
+            ' "$HOLDS" | dequote > "$HEADINGS_FILE"
+          fi
+
+          mapfile -t SCAN < <(git ls-files '*.md' \
+            | grep -v -E '^(brand/live-holds\.md|brand/CHANGELOG\.md|reference/voice-guardian-pack\.md|README\.md|docs/)' || true)
+
+          if [ "${#SCAN[@]}" -gt 0 ]; then
+            # Only the comma/and-separated run of quoted names immediately
+            # after the arrow is the pointer list — quoted prose later in
+            # the same sentence is not a pointer.
+            while IFS= read -r hit; do
+              f=${hit%%:*}; rest=${hit#*:}; ln=${rest%%:*}; line=${rest#*:}
+              after=${line#*→}
+              while :; do
+                after=$(printf '%s' "$after" | sed -E 's/^([[:space:]*,]+|and[[:space:]]+|or[[:space:]]+)+//')
+                q=$(printf '%s' "$after" | grep -oE '^("[^"]+"|“[^”]+”)' | head -1) || true
+                if [ -z "$q" ]; then break; fi
+                name=${q#?}; name=${name%?}   # strip surrounding quotes
+                name=$(printf '%s' "$name" | dequote)
+                if ! grep -q "^$(printf '%s' "$name" | sed 's/[][\.*^$/]/\\&/g')" "$HEADINGS_FILE"; then
+                  fail "$f:$ln — pointer to live-holds hold \"$name\" matches no hold heading (prefix match)."
+                fi
+                after=${after#"$q"}
+              done
+            done < <(grep -Hn "live-holds\.md" "${SCAN[@]}" /dev/null 2>/dev/null | grep "→" || true)
+          fi
+
+          # ---------- 2. Hold-block completeness ----------
+
+          if [ -f "$HOLDS" ]; then
+            while IFS='|' read -r kind heading detail; do
+              case "$kind" in
+                MISSING) fail "$HOLDS — hold \"$heading\" is missing required field(s): $detail" ;;
+                NODATE)  soft "$HOLDS — hold \"$heading\" has a Review by line with no YYYY-MM-DD date" ;;
+                DATE)
+                  if ! valid_date "$detail"; then
+                    fail "$HOLDS — hold \"$heading\" has an invalid Review by date: $detail"
+                  elif [ "$(date -d "$detail" +%s)" -gt "$HORIZON" ]; then
+                    fail "$HOLDS — hold \"$heading\" has Review by $detail, more than a year out — likely a typo, and it hides the hold from the expiry watch"
+                  fi ;;
+              esac
+            done < <(awk '
+              function flush() {
+                if (h == "") return
+                miss = ""
+                if (!("Scope" in s))          miss = miss "Scope, "
+                if (!("Lift condition" in s)) miss = miss "Lift condition, "
+                if (!("Review by" in s))      miss = miss "Review by, "
+                if (!("Source" in s))         miss = miss "Source, "
+                if (miss != "") { sub(/, $/, "", miss); printf "MISSING|%s|%s\n", h, miss }
+              }
+              /<!--/ { inc=1 } /-->/ { inc=0; next } inc { next }
+              /^### / { flush(); h=$0; sub(/^### +/, "", h); delete s; next }
+              /^## /  { flush(); h="" }
+              h != "" && /\*\*Scope:\*\*/          { s["Scope"]=1 }
+              h != "" && /\*\*Lift condition:\*\*/ { s["Lift condition"]=1 }
+              h != "" && /\*\*Source:\*\*/         { s["Source"]=1 }
+              h != "" && /\*\*Review by:\*\*/ {
+                s["Review by"]=1
+                if (match($0, /[0-9]{4}-[0-9]{2}-[0-9]{2}/))
+                  printf "DATE|%s|%s\n", h, substr($0, RSTART, RLENGTH)
+                else
+                  printf "NODATE|%s|\n", h
+              }
+              END { flush() }
+            ' "$HOLDS")
+          fi
+
+          # ---------- 3. Metadata hygiene ----------
+
+          need_meta() { # file require_version(0|1)
+            local f=$1 want_version=$2 head lu v
+            [ -f "$f" ] || return 0
+            head=$(head -40 "$f")
+            lu=$(printf '%s\n' "$head" | sed -n 's/^[[:space:]]*last_updated:[[:space:]]*//p' | head -1 | tr -d '[:space:]')
+            if [ -z "$lu" ]; then
+              fail "$f — metadata block has no last_updated field"
+            elif [ "$lu" = "YYYY-MM-DD" ]; then
+              soft "$f — last_updated is the unset placeholder"
+            elif ! valid_date "$lu"; then
+              fail "$f — last_updated is not a valid YYYY-MM-DD date: $lu"
+            fi
+            if [ "$want_version" = 1 ]; then
+              v=$(printf '%s\n' "$head" | grep -c '^[[:space:]]*version:' || true)
+              if [ "$v" -eq 0 ]; then fail "$f — metadata block has no version field"; fi
+            fi
+          }
+
+          need_meta brand/brand-context.md 1
+          need_meta brand/brand-voice.md 1
+          need_meta brand/brand-visual.md 1
+          need_meta brand/live-holds.md 0
+          need_meta brand/retired-language.md 0
+          need_meta reference/evidence.md 0
+          need_meta reference/approved-copy-samples.md 0
+          need_meta strategy/positioning.md 0
+          need_meta strategy/message-house.md 0
+
+          # ---------- 4. Evidence-register status vocabulary ----------
+
+          EV="reference/evidence.md"
+          if [ -f "$EV" ]; then
+            while IFS='|' read -r kind ln st row; do
+              case "$kind" in
+                BADSTATUS) fail "$EV:$ln — status \"$st\" is not in the register vocabulary (usable | on hold (see live-holds) | gap-to-close | retired)" ;;
+                NOPOINTER) fail "$EV:$ln — on-hold row does not point at brand/live-holds.md" ;;
+              esac
+            done < <(awk '
+              function trim(x) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", x); return x }
+              !/^\|/ { idx=0; next }
+              {
+                n = split($0, c, "|")
+                if (idx == 0) {
+                  for (i = 2; i <= n; i++) if (trim(c[i]) == "Status") { idx = i; break }
+                  next
+                }
+                if ($0 ~ /^\|[-| :]+$/) next
+                st = trim(c[idx])
+                if (st == "") next
+                if (st != "usable" && st != "on hold (see live-holds)" && st != "gap-to-close" && st != "retired")
+                  printf "BADSTATUS|%d|%s|\n", NR, st
+                else if (st == "on hold (see live-holds)" && $0 !~ /live-holds\.md/)
+                  printf "NOPOINTER|%d|%s|\n", NR, st
+              }
+            ' "$EV")
+          fi
+
+          rm -f "$HEADINGS_FILE"
+
+          if [ "$FAILS" -gt 0 ]; then
+            echo "Kit lint: $FAILS failure(s)."
+            exit 1
+          fi
+          echo "Kit lint: clean."

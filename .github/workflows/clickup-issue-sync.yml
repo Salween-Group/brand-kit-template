@@ -1,0 +1,199 @@
+name: ClickUp issue sync
+
+# Most issues on a kit repo are ops-facing and stay in GitHub — but some are
+# the account team's to act on (holds past review-by), and account teams
+# live in ClickUp, not in GitHub notifications. This workflow mirrors the
+# issues that carry the `clickup` label onto the kit's ClickUp list: opening
+# a labelled issue creates a task (assigned to the account manager), editing
+# the issue updates the task, closing the issue closes the task, reopening
+# reopens it. Nobody closes anything by hand in two places — the repo stays
+# the source of truth and ClickUp follows it.
+#
+# The mirror is OPT-IN by design: nothing reaches the account team's list
+# unless an issue is deliberately labelled, so a new check added later can
+# never spam it by default. The holds expiry check labels its own tracking
+# issue, and a human can add the label to any other issue worth an AM's
+# attention. The label gates task CREATION only — once an issue is mirrored,
+# every later event follows through regardless of labels, so a stripped
+# label can never orphan an open task in ClickUp.
+#
+# Per-kit wiring lives in .github/clickup-sync.yml (which list, and
+# optionally who to assign). The template ships that file with empty values,
+# so this workflow self-skips until a kit fills it in. The ClickUp API token
+# is the CLICKUP_TOKEN repo Actions secret — never a committed file. Setup
+# steps and the fleet's repo→list mapping are documented in the private ops
+# repo's clickup-issue-sync runbook.
+#
+# The mirror is stateless: after creating a task, the workflow posts one
+# comment on the issue carrying the task link plus a machine-readable
+# marker (<!-- clickup-task:ID -->), and later events find the task through
+# that marker. An already-open issue therefore mirrors the moment it gains
+# the label (the `labeled` trigger), and pre-existing tracking issues catch
+# up within a day — the daily checks re-label their issues on every update.
+
+on:
+  issues:
+    types: [opened, edited, labeled, reopened, closed]
+
+permissions:
+  contents: read
+  issues: write
+
+# Events for the same issue can land close together (opened + an immediate
+# edit); serialise them so two runs never both decide to create a task.
+concurrency:
+  group: clickup-sync-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Mirror the issue event to ClickUp
+        env:
+          CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          EVENT_ACTION: ${{ github.event.action }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          ISSUE_LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          CFG=".github/clickup-sync.yml"
+
+          if [ ! -f "$CFG" ]; then
+            echo "No $CFG — sync not configured on this kit; skipping."
+            exit 0
+          fi
+
+          # Flat key: value reads; inline comments and quotes stripped.
+          cfg_get() {
+            sed -n "s/^$1:[[:space:]]*//p" "$CFG" | head -1 \
+              | sed 's/[[:space:]]*#.*$//' | tr -d '"[:space:]'
+          }
+
+          LIST_ID=$(cfg_get list_id)
+          ASSIGNEE_ID=$(cfg_get assignee_id)
+
+          if [ -z "$LIST_ID" ]; then
+            echo "list_id is empty in $CFG — sync not enabled on this kit; skipping."
+            exit 0
+          fi
+
+          if [ -z "${CLICKUP_TOKEN//[[:space:]]/}" ]; then
+            echo "::error::$CFG names a ClickUp list but the CLICKUP_TOKEN secret is not set — the sync cannot run. See the clickup-issue-sync runbook in the private ops repo."
+            exit 1
+          fi
+
+          api() { # method path [json-body]
+            local method=$1 path=$2 data=${3:-} resp code body
+            local args=(-sS -X "$method" \
+              -H "Authorization: $CLICKUP_TOKEN" \
+              -H "Content-Type: application/json" \
+              "https://api.clickup.com/api/v2$path")
+            [ -n "$data" ] && args+=(-d "$data")
+            resp=$(curl "${args[@]}" -w $'\n%{http_code}')
+            code=${resp##*$'\n'}
+            body=${resp%$'\n'*}
+            if [ "${code:0:1}" != "2" ]; then
+              echo "::error::ClickUp API $method $path failed (HTTP $code): $(printf '%s' "$body" | head -c 300)"
+              exit 1
+            fi
+            printf '%s' "$body"
+          }
+
+          # A list's own statuses decide what "open" and "closed" mean here.
+          status_of_type() { # open|closed
+            api GET "/list/$LIST_ID" \
+              | jq -r --arg t "$1" '[.statuses[] | select(.type==$t) | .status][0] // empty'
+          }
+
+          # Find an existing mirror through the marker comment (last one wins).
+          TASK_ID=$(gh api "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" --paginate \
+            --jq '.[].body' \
+            | grep -o '<!-- clickup-task:[A-Za-z0-9_-]* -->' | tail -1 \
+            | sed 's/^<!-- clickup-task:\(.*\) -->$/\1/') || true
+
+          TASK_NAME="[Brand kit] $ISSUE_TITLE (#$ISSUE_NUMBER)"
+          DESCRIPTION="**Mirrored from GitHub:** $ISSUE_URL
+
+          This task follows the issue: it updates when the issue is edited and closes when the issue closes. The fix itself lands in the kit repo — closing the issue there is what closes this task.
+
+          ---
+
+          ${ISSUE_BODY:-_(no issue body)_}"
+
+          case "$EVENT_ACTION" in
+            closed)
+              if [ -z "$TASK_ID" ]; then
+                echo "Issue #$ISSUE_NUMBER closed but was never mirrored — nothing to do."
+                exit 0
+              fi
+              CLOSED_STATUS=$(status_of_type closed)
+              if [ -z "$CLOSED_STATUS" ]; then
+                echo "::error::ClickUp list $LIST_ID has no closed-type status — cannot close task $TASK_ID."
+                exit 1
+              fi
+              api PUT "/task/$TASK_ID" \
+                "$(jq -n --arg s "$CLOSED_STATUS" '{status:$s}')" >/dev/null
+              echo "Closed ClickUp task $TASK_ID (status: $CLOSED_STATUS)."
+              ;;
+
+            opened|edited|labeled|reopened)
+              if [ -n "$TASK_ID" ]; then
+                api PUT "/task/$TASK_ID" \
+                  "$(jq -n --arg n "$TASK_NAME" --arg d "$DESCRIPTION" \
+                       '{name:$n, markdown_description:$d}')" >/dev/null
+                echo "Updated ClickUp task $TASK_ID from issue #$ISSUE_NUMBER."
+                if [ "$EVENT_ACTION" = "reopened" ]; then
+                  OPEN_STATUS=$(status_of_type open)
+                  if [ -n "$OPEN_STATUS" ]; then
+                    api PUT "/task/$TASK_ID" \
+                      "$(jq -n --arg s "$OPEN_STATUS" '{status:$s}')" >/dev/null
+                    echo "Reopened ClickUp task $TASK_ID (status: $OPEN_STATUS)."
+                  fi
+                fi
+              else
+                # No mirror yet: creation is opt-in — only issues labelled
+                # `clickup` reach the account team's list.
+                case ",$ISSUE_LABELS," in
+                  *,clickup,*) ;;
+                  *)
+                    echo "Issue #$ISSUE_NUMBER has no clickup label and no existing mirror — skipping (the mirror is opt-in)."
+                    exit 0 ;;
+                esac
+                if [ "$ISSUE_STATE" != "open" ]; then
+                  echo "Issue #$ISSUE_NUMBER is $ISSUE_STATE and was never mirrored — skipping."
+                  exit 0
+                fi
+                ASSIGNEES='[]'
+                if printf '%s' "$ASSIGNEE_ID" | grep -Eq '^[0-9]+$'; then
+                  ASSIGNEES="[$ASSIGNEE_ID]"
+                elif [ -n "$ASSIGNEE_ID" ]; then
+                  echo "::warning::assignee_id in $CFG is not a numeric ClickUp user id — creating the task unassigned."
+                fi
+                RESP=$(api POST "/list/$LIST_ID/task" \
+                  "$(jq -n --arg n "$TASK_NAME" --arg d "$DESCRIPTION" \
+                       --argjson a "$ASSIGNEES" \
+                       '{name:$n, markdown_description:$d, assignees:$a}')")
+                TASK_ID=$(printf '%s' "$RESP" | jq -r .id)
+                TASK_URL=$(printf '%s' "$RESP" | jq -r .url)
+                gh issue comment "$ISSUE_NUMBER" -R "$GH_REPO" --body "Mirrored to ClickUp: $TASK_URL
+
+          <!-- clickup-task:$TASK_ID -->"
+                echo "Created ClickUp task $TASK_ID for issue #$ISSUE_NUMBER."
+              fi
+              ;;
+
+            *)
+              echo "Unhandled action '$EVENT_ACTION' — skipping."
+              ;;
+          esac

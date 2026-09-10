@@ -64,9 +64,26 @@ jobs:
             [ -z "$term" ] && continue
             idx=$((idx+1))
             checked=$((checked+1))
+            # Escape BRE metacharacters so the term is matched literally.
+            # (BRE-escaping instead of grep -F: some grep builds, e.g.
+            # Git-for-Windows grep 3.0, crash on -i combined with -F, and
+            # this block should stay copy-pasteable as a local pre-push
+            # check.)
+            escaped="$(printf '%s' "$term" | sed 's/[][\.*^$]/\\&/g')"
             # -l: filenames only. Never print the term or the matching line —
             # logs on a public repository are world-readable.
-            hits=$(grep -ilwF -- "$term" "${files[@]}" || true)
+            # grep exit 1 just means "no match"; anything above 1 is a grep
+            # FAILURE (crash, unreadable file) and must fail the guard — a
+            # crashed grep certifies nothing, and `|| true` would read it
+            # as a silent pass.
+            set +e
+            hits=$(grep -ilw -e "$escaped" -- "${files[@]}")
+            rc=$?
+            set -e
+            if [ "$rc" -gt 1 ]; then
+              echo "::error::grep failed (exit $rc) while checking term #$idx — the guard cannot certify cleanliness."
+              exit 1
+            fi
             if [ -n "$hits" ]; then
               echo "::error::Confidential term #$idx (see the canonical list in the ops repo) found in:"
               echo "$hits"

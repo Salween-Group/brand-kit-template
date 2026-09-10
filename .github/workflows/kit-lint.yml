@@ -21,9 +21,10 @@ name: Kit lint
 #      usable | on hold (see live-holds) | gap-to-close | retired, and every
 #      on-hold row must point at live-holds.
 #
-# Scope notes: build products and history are exempt from the pointer check
-# (CHANGELOG legitimately references deleted holds; the voice-guardian pack
-# is governed by its own freshness gates; docs/ is template-only showcase).
+# Scope notes: build products, history, and docs are exempt from the pointer
+# check (CHANGELOG legitimately references deleted holds; the voice-guardian
+# pack is governed by its own freshness gates; README and docs/ document the
+# pointer convention with literal examples).
 # Missing files are skipped — file inventory is kit-doctor's job, not lint's.
 # On the template itself, placeholder values (YYYY-MM-DD) downgrade to
 # warnings so the scaffold stays green.
@@ -47,8 +48,11 @@ jobs:
         run: |
           set -uo pipefail
 
+          # NOTE: GitHub's default bash shell injects -e, so every guard in
+          # this script must be a full if-statement — a bare `[ x ] && y`
+          # returning 1 kills the job silently.
           TEMPLATE_MODE=0
-          [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ] && TEMPLATE_MODE=1
+          if [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ]; then TEMPLATE_MODE=1; fi
 
           FAILS=0
           fail()  { echo "::error::$1"; FAILS=$((FAILS+1)); }
@@ -82,7 +86,7 @@ jobs:
           fi
 
           mapfile -t SCAN < <(git ls-files '*.md' \
-            | grep -v -E '^(brand/live-holds\.md|brand/CHANGELOG\.md|reference/voice-guardian-pack\.md|docs/)' || true)
+            | grep -v -E '^(brand/live-holds\.md|brand/CHANGELOG\.md|reference/voice-guardian-pack\.md|README\.md|docs/)' || true)
 
           if [ "${#SCAN[@]}" -gt 0 ]; then
             # Only the comma/and-separated run of quoted names immediately
@@ -94,7 +98,7 @@ jobs:
               while :; do
                 after=$(printf '%s' "$after" | sed -E 's/^([[:space:]*,]+|and[[:space:]]+|or[[:space:]]+)+//')
                 q=$(printf '%s' "$after" | grep -oE '^("[^"]+"|“[^”]+”)' | head -1) || true
-                [ -z "$q" ] && break
+                if [ -z "$q" ]; then break; fi
                 name=${q#?}; name=${name%?}   # strip surrounding quotes
                 name=$(printf '%s' "$name" | dequote)
                 if ! grep -q "^$(printf '%s' "$name" | sed 's/[][\.*^$/]/\\&/g')" "$HEADINGS_FILE"; then
@@ -162,7 +166,7 @@ jobs:
             fi
             if [ "$want_version" = 1 ]; then
               v=$(printf '%s\n' "$head" | grep -c '^[[:space:]]*version:' || true)
-              [ "$v" -eq 0 ] && fail "$f — metadata block has no version field"
+              if [ "$v" -eq 0 ]; then fail "$f — metadata block has no version field"; fi
             fi
           }
 

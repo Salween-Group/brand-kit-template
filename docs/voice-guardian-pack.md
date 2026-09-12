@@ -145,20 +145,34 @@ One deliberate exemption: the pack must quote retired phrases verbatim in order 
 enforce them, so `reference/voice-guardian-pack.md` is excluded from the
 retired-language grep — alongside `brand/retired-language.md` itself and the changelog.
 
-## Deployment, and the human last mile
+## Deployment, and the last mile
 
-The pack deploys two ways:
+The pack deploys three ways:
 
 - **Custom GPT:** §1 (role) and §3 (hard rules) go into the instructions field, where
   they can't be truncated away; the full pack becomes the knowledge file.
 - **Assistant skill:** §1 becomes the skill's instruction body; the full pack rides
   along as a reference file.
+- **Synced mirror:** the pack is mirrored into a file the assistant platform itself owns
+  — for us, a "Brand Kit" file in each client's ClickUp folder, read by that client's
+  brand-voice-guardian agent. A scheduled job diffs that mirror against the repository
+  copy daily, updates it when the repository has moved, and reports on success as well
+  as failure, so a sync that stops is visible rather than silent.
 
-Re-uploading a regenerated pack into a hosted GPT or skill cannot be automated — it is
-a human step, every time. Which is why the §0 stamp exists: date plus source commit is
-how anyone, including the client, verifies that a deployed copy is current. The
-handoff message for every regeneration says so explicitly: *the previously deployed
-copy is now stale until re-uploaded.*
+Whether the last mile can be automated depends on which of those you are in, and it is
+worth being precise about it rather than assuming the worst case. A mirror the platform
+can write to closes the loop: a regeneration reaches the deployed assistant within a day
+and nobody has to remember. A hosted GPT or skill whose knowledge file is uploaded by
+hand does not, and neither does a copy the client keeps themselves — those stay human
+steps, every time, and the handoff message for every regeneration says so: *the
+previously deployed copy is now stale until re-uploaded.*
+
+The §0 stamp is what makes either case checkable: date plus source commit is how anyone,
+including the client, verifies that a deployed copy is current — without having to trust
+that a sync ran. It also makes two things legible that would otherwise read as faults. A
+daily sync means a deployed copy can sit a day behind `main` and still be healthy. And a
+mirror is a mirror: the repository remains the source of truth, so a rule edited in the
+deployed copy is a divergence to reconcile, not a change.
 
 ## Why this shape
 

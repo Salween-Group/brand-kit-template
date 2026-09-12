@@ -13,6 +13,10 @@
     fathom_query:  [Client Name]                                     # Fathom meeting search term; defaults to client if omitted
     fathom_team:   [Fathom Team Name]                                # optional; delete this line if the client has no Fathom team
     teams_chat:    [Exact Microsoft Teams Chat Name]                 # destination chat for proposed brand-kit updates
+    samples:                       # Consumed by the brand-kit-samples-refresh skill. Optional — every value has a fallback.
+      planable_workspace: [Client Name]     # Planable workspace name; defaults to the client name when absent
+      blog_path: [www.client.com/blog/]     # URL prefix identifying articles among GA4 landing pages; without it the article half of a samples refresh skips cleanly
+      published_floor: [YYYY-MM-DD]         # optional; never sample content published before this date
 -->
 
 ## 1. Company Overview

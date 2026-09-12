@@ -72,9 +72,12 @@ project chat and crowds out the content.
   merge that lands voice-source changes without the pack (the gate only runs on PRs)
   opens a `pack-stale` issue on the kit, and the issue closes itself on the push that
   brings the pack current. The pack is exempt from the retired-language grep (it must
-  quote retired phrases verbatim to enforce them). The last mile — re-uploading the
-  regenerated pack into the custom GPT or skill — is a human step; the pack's stamp is
-  how you verify a deployed copy is current. The full method — pack anatomy, the
+  quote retired phrases verbatim to enforce them). The last mile depends on the
+  deployment: a mirror the assistant platform owns (for us, a per-client ClickUp file
+  read by that client's brand-voice-guardian agent) syncs on a daily diff and reports
+  success or failure, while a hand-uploaded GPT knowledge file — or a copy the client
+  keeps themselves — stays a human step. Either way the pack's stamp is how you verify
+  a deployed copy is current. The full method — pack anatomy, the
   shareable filter, and generation discipline — is documented in
   [`docs/voice-guardian-pack.md`](docs/voice-guardian-pack.md).
 - **This public repo is guarded against confidential references.** This template is

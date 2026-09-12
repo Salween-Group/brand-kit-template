@@ -130,6 +130,27 @@ project chat and crowds out the content.
   `.github/clickup-sync.yml`, shipped empty here so the sync self-skips until a kit
   configures it; the API token is a per-repo Actions secret, never a committed file.
 
+- **Kit structure syncs from this template.** This repo is the canonical base schema:
+  every client kit carries the same file inventory and the same CI workflows, and a
+  structural improvement born in one kit lands here first, then rolls out — kits are
+  never patched from each other. Each kit's README carries a schema stamp recording the
+  template commit its structure was last synced to:
+
+  ```
+  <!--
+    kit_schema_version:  2026-09-12   # date of the template commit this kit's structure matches
+    template_commit:     0a1b2c3      # that commit's short sha
+  -->
+  ```
+
+  An internal sync skill diffs a kit against this template — file inventory, workflow
+  content, metadata conventions — and opens a draft PR bringing it up to date, never
+  touching the kit's content; the stamp tells that diff where to start. Two exclusions
+  are part of the schema contract: `docs/` is showcase material for this repository, not
+  kit schema, and `client-leakage-guard.yml` is this repository only — a client kit
+  legitimately contains its own client's name. The template carries no live stamp values
+  of its own; it *is* the schema.
+
 ### File structure
 
 ```

@@ -18,6 +18,21 @@ name: Client-leakage guard
 # showing green is worse than a red build), skips with a warning on PRs
 # (fork PRs never receive secrets).
 #
+# TWO SURFACES, because file content is not the only way a client reference
+# reaches this repo:
+#   - job `check`    — tracked file content (the backported-content vector).
+#   - job `metadata` — the PR title/body, and the commit messages a push
+#                      lands on main. Authorial prose explaining WHY a change
+#                      is made is a live leak vector: it is written straight
+#                      from client context, it publishes the moment the PR
+#                      opens, and `check` cannot see it — a PR body is not in
+#                      the repository at all, it exists only via the API.
+# The PR half is PREVENTIVE: it fails before merge, and `edited` is in the
+# trigger types so a body rewritten after opening is re-checked. The commit
+# half is DETECTIVE only — a push run fires after the text is already public,
+# so read a red there as "scrub now", not "caught in time". GitHub also keeps
+# PR-body edit history, so a scrubbed body still needs a human judgement call.
+#
 # This guard belongs on brand-kit-template ONLY. Client kits legitimately
 # contain their own client's name — do not roll this workflow out to them.
 
@@ -25,6 +40,10 @@ on:
   push:
     branches: [main]
   pull_request:
+    # `edited` is deliberate: a PR body can be rewritten after opening, so the
+    # default types alone would let a clean-at-open body later carry a client
+    # reference unchecked.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -98,5 +117,127 @@ jobs:
 
           if [ "$fail" -eq 0 ]; then
             echo "No confidential terms found ($checked terms checked across ${#files[@]} tracked files)."
+          fi
+          exit "$fail"
+
+  metadata:
+    runs-on: ubuntu-latest
+    # No checkout: every surface this job reads comes from the event payload,
+    # so it needs nothing from the repository.
+    steps:
+      - name: Grep PR title/body and pushed commit messages for confidential terms
+        env:
+          TERMS: ${{ secrets.CLIENT_LEAKAGE_TERMS }}
+          EVENT: ${{ github.event_name }}
+          # UNTRUSTED INPUT. PR prose and commit messages are author-controlled
+          # text, so they reach bash ONLY as environment variables. Never
+          # inline them into the script body with ${{ }} — that expands before
+          # bash parses, and a crafted body would execute as shell.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          HEAD_MSG: ${{ github.event.head_commit.message }}
+          COMMITS_JSON: ${{ toJSON(github.event.commits) }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TERMS//[[:space:]]/}" ]; then
+            if [ "$EVENT" = "pull_request" ]; then
+              echo "::warning::CLIENT_LEAKAGE_TERMS unavailable (fork PR, or secret unset) — metadata guard skipped. The push run after merge will enforce it."
+              exit 0
+            fi
+            echo "::error::CLIENT_LEAKAGE_TERMS secret is not set — the leakage guard cannot run. Set it from the canonical list in the private ops repo (see its leakage-guard runbook)."
+            exit 1
+          fi
+
+          work="$(mktemp -d)"
+          labels=()
+          surfaces=()
+
+          # Each surface is written to its own file so the matching below is
+          # the same whole-word grep the `check` job uses, and so no surface
+          # text is ever interpolated into a command line.
+          add_surface() {
+            local f="$work/surface${#surfaces[@]}"
+            printf '%s' "${2-}" > "$f"
+            labels+=("$1")
+            surfaces+=("$f")
+          }
+
+          if [ "$EVENT" = "pull_request" ]; then
+            add_surface "PR title" "${PR_TITLE-}"
+            add_surface "PR body"  "${PR_BODY-}"
+          else
+            add_surface "pushed head commit message" "${HEAD_MSG-}"
+            # github.event.commits carries the messages of the commits this
+            # push added — for the merge-a-PR flow that is the branch's own
+            # commits, which is exactly where authorial prose hides. GitHub
+            # caps the array at 20 entries; a push bigger than that is not
+            # this repo's normal flow, and the head commit is still checked.
+            if [ -n "${COMMITS_JSON-}" ] && [ "$COMMITS_JSON" != "null" ]; then
+              # jq is preinstalled on ubuntu-latest; assert it rather than
+              # letting a missing binary surface as a bare 127. (This is why
+              # only the `check` block is copy-pasteable as a local pre-push
+              # check — Git-for-Windows bash ships no jq.)
+              if ! command -v jq >/dev/null 2>&1; then
+                echo "::error::jq not found on the runner — the guard cannot read the pushed commit messages and cannot certify cleanliness."
+                exit 1
+              fi
+              count=$(printf '%s' "$COMMITS_JSON" | jq 'length')
+              i=0
+              while [ "$i" -lt "$count" ]; do
+                sha=$(printf '%s' "$COMMITS_JSON" | jq -r ".[$i].id[0:7]")
+                printf '%s' "$COMMITS_JSON" | jq -r ".[$i].message" > "$work/commit$i"
+                labels+=("pushed commit $sha message")
+                surfaces+=("$work/commit$i")
+                i=$((i+1))
+              done
+            fi
+          fi
+
+          if [ "${#surfaces[@]}" -eq 0 ]; then
+            echo "No metadata surfaces on this event — nothing to check."
+            exit 0
+          fi
+
+          fail=0
+          idx=0
+          checked=0
+          while IFS= read -r term; do
+            case "$term" in \#*) continue ;; esac
+            term="$(printf '%s' "$term" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+            [ -z "$term" ] && continue
+            idx=$((idx+1))
+            checked=$((checked+1))
+            escaped="$(printf '%s' "$term" | sed 's/[][\.*^$]/\\&/g')"
+            s=0
+            while [ "$s" -lt "${#surfaces[@]}" ]; do
+              # -q: never echo the matching line. As in `check`, the failure
+              # names the surface and a term INDEX only — public logs.
+              set +e
+              grep -qiw -e "$escaped" -- "${surfaces[$s]}"
+              rc=$?
+              set -e
+              if [ "$rc" -gt 1 ]; then
+                echo "::error::grep failed (exit $rc) while checking term #$idx — the guard cannot certify cleanliness."
+                exit 1
+              fi
+              if [ "$rc" -eq 0 ]; then
+                echo "::error::Confidential term #$idx (see the canonical list in the ops repo) found in: ${labels[$s]}"
+                fail=1
+              fi
+              s=$((s+1))
+            done
+          done <<< "$TERMS"
+
+          if [ "$checked" -eq 0 ]; then
+            echo "::error::CLIENT_LEAKAGE_TERMS contains no usable terms after stripping comments — fix the secret."
+            exit 1
+          fi
+
+          if [ "$fail" -eq 0 ]; then
+            echo "No confidential terms found ($checked terms checked across ${#surfaces[@]} metadata surfaces)."
+          else
+            echo "::error::Rewrite the flagged text to describe the change without naming a client (\"a client kit\", \"the pilot kit\"). On a PR, edit the title/body and this check re-runs."
           fi
           exit "$fail"

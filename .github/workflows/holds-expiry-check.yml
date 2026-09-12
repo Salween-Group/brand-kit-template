@@ -23,6 +23,16 @@ name: Live-holds expiry check
 # date-checked. Kit lint validates the field's vocabulary; this job only
 # reads it.
 #
+# A flagged file is classified before it is reported. A file whose BODY is
+# still byte-identical to the template's has never been populated: its
+# last_updated records the day the kit was scaffolded (kit lint requires a
+# real date, and on an untouched file the only commit is the kit's init), so
+# the clock has been measuring the kit's age rather than a review interval.
+# That is a first fill, not a refresh - and "still accurate, set
+# last_reviewed" is an invalid answer for it, since there is nothing there to
+# be accurate. Metadata blocks are excluded from the comparison, so filling in
+# a date or bumping a version never counts as content.
+#
 # NOTE: the workflow name "Live-holds expiry check" is load-bearing — the
 # ClickUp issue sync's reconcile pass chains on it by exact name via
 # workflow_run (see clickup-issue-sync.yml). Renaming this workflow silently
@@ -127,19 +137,42 @@ jobs:
             exit 0
           fi
 
+          cadence_block=""
+          if [ -n "${STALE//[[:space:]]/}" ]; then
+            cadence_block=$(cat <<BLOCK
+          ### Past review cadence
+
+          | File | Cadence | Clock basis | Days overdue |
+          |---|---|---|---|
+          $STALE
+
+          A lapsed cadence never means the content is wrong - it means nobody has confirmed it recently. Review each file with the account team, then either **refresh** the content, or **confirm** it is still accurate as-is and record that by setting \`last_reviewed: <today>\` in the file's metadata block.
+          BLOCK
+          )
+          fi
+
+          scaffold_block=""
+          if [ -n "${SCAFFOLD//[[:space:]]/}" ]; then
+            scaffold_block=$(cat <<BLOCK
+          ### Never populated
+
+          | File | Cadence | Clock basis | Times reviewed |
+          |---|---|---|---|
+          $SCAFFOLD
+
+          These files still carry the template's body - nothing has ever been written in them. The date above is when the kit was **scaffolded**, not when anyone reviewed anything: kit lint requires a real \`last_updated\`, and on an untouched file the only commit is the kit's init, so this clock has been measuring the kit's age.
+
+          Treat it as a **first fill, not a refresh**. Setting \`last_reviewed\` is **not** a valid answer here - it would record that placeholder text had been reviewed and found accurate, and buy another full cadence of silence. For \`reference/approved-copy-samples.md\`, a samples refresh does the first fill.
+          BLOCK
+          )
+          fi
+
           body=$(cat <<BODY
-          The daily live-holds check found holds in \`brand/live-holds.md\` past their review-by date (checked $(date -u +%F), UTC).
+          The daily freshness check found kit files needing attention (checked $(date -u +%F), UTC).
+          $cadence_block
+          $scaffold_block
 
-          | Hold | Review by |
-          |---|---|
-          $EXPIRED
-
-          Per the rules in \`brand/live-holds.md\`, an expired date never means the hold has lifted — for each hold above, confirm with the account team and then either:
-
-          - **renew** the review-by date if the hold still stands,
-          - **lift** it — delete the hold's block and record the removal in \`brand/CHANGELOG.md\` — if its lift condition is met.
-
-          This issue is maintained by \`.github/workflows/holds-expiry-check.yml\`: it is updated on every run and closes itself once no hold is past review-by.
+          This issue is maintained by \`.github/workflows/holds-expiry-check.yml\` (cadence job): it is updated on every run and closes itself once every file is populated and inside its cadence.
           BODY
           )
 
@@ -179,6 +212,33 @@ jobs:
           fi
 
           NOW=$(date -u +%s)
+          TEMPLATE_RAW=https://raw.githubusercontent.com/Salween-Group/brand-kit-template/main
+
+          # A file's content with its leading metadata comment block removed,
+          # so a real last_updated or a version bump never reads as content.
+          body_of() {
+            if grep -q '^-->' "$1"; then
+              sed -n '/^-->/,$p' "$1" | tail -n +2
+            else
+              cat "$1"
+            fi
+          }
+
+          # 0 when the file's body is still the template's - never populated.
+          # An unreachable template copy (renamed, deleted, network) counts as
+          # populated, so a fetch failure can never silently reclassify real
+          # staleness as a scaffold.
+          is_scaffold() {
+            f="$1"; rc=1
+            tmp=$(mktemp)
+            if curl -fsSL --max-time 20 "$TEMPLATE_RAW/$f" -o "$tmp" 2>/dev/null; then
+              if [ "$(body_of "$f" | md5sum)" = "$(body_of "$tmp" | md5sum)" ]; then rc=0; fi
+            else
+              echo "::warning::$f - could not fetch the template copy; treating as populated."
+            fi
+            rm -f "$tmp"
+            return $rc
+          }
 
           # Echo the epoch for a real YYYY-MM-DD; echo nothing otherwise.
           # Round-trip guard: no silent normalisation (2026-02-30 is invalid).
@@ -190,6 +250,7 @@ jobs:
           }
 
           stale=""
+          scaffold=""
           while IFS= read -r f; do
             meta=$(head -40 "$f")
             cad=$(printf '%s\n' "$meta" | sed -n 's/^[[:space:]]*review_cadence:[[:space:]]*//p' | head -1 | awk '{print $1}')
@@ -224,21 +285,32 @@ jobs:
 
             age=$(( (NOW - eff) / 86400 ))
             if [ "$age" -gt "$days" ]; then
-              stale="${stale}| \`$f\` | $cad | $basis | $(( age - days )) |"$'\n'
+              if is_scaffold "$f"; then
+                scaffold="${scaffold}| \`$f\` | $cad | $basis | never |"$'\n'
+              else
+                stale="${stale}| \`$f\` | $cad | $basis | $(( age - days )) |"$'\n'
+              fi
             fi
           done < <(git ls-files 'brand/*.md' 'strategy/*.md' 'reference/*.md' \
             | grep -v -E '(CHANGELOG\.md|voice-guardian-pack\.md)$' || true)
 
           if [ -z "${stale//[[:space:]]/}" ]; then
-            echo "No files past their review cadence."
+            echo "No populated files past their review cadence."
           else
             echo "Files past review cadence:"
             echo "$stale"
+          fi
+          if [ -n "${scaffold//[[:space:]]/}" ]; then
+            echo "Never-populated files (still the template's body):"
+            echo "$scaffold"
           fi
 
           {
             echo "stale<<SCAN_EOF"
             echo "$stale"
+            echo "SCAN_EOF"
+            echo "scaffold<<SCAN_EOF"
+            echo "$scaffold"
             echo "SCAN_EOF"
           } >> "$GITHUB_OUTPUT"
 
@@ -247,6 +319,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           STALE: ${{ steps.scan.outputs.stale }}
+          SCAFFOLD: ${{ steps.scan.outputs.scaffold }}
         shell: bash
         run: |
           set -euo pipefail
@@ -256,13 +329,13 @@ jobs:
             --search "\"$TITLE\" in:title" \
             --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
 
-          if [ -z "${STALE//[[:space:]]/}" ]; then
+          if [ -z "${STALE//[[:space:]]/}" ] && [ -z "${SCAFFOLD//[[:space:]]/}" ]; then
             if [ -n "$existing" ]; then
               gh issue close "$existing" \
-                --comment "Every file is inside its review cadence again — closing automatically."
+                --comment "Every file is populated and inside its review cadence again - closing automatically."
               echo "Closed issue #$existing."
             else
-              echo "Nothing stale and no open issue — nothing to do."
+              echo "Nothing to report and no open issue - nothing to do."
             fi
             exit 0
           fi

@@ -27,11 +27,26 @@ name: Live-holds expiry check
 # ClickUp issue sync's reconcile pass chains on it by exact name via
 # workflow_run (see clickup-issue-sync.yml). Renaming this workflow silently
 # breaks that chain.
+#
+# TRIGGERS: the daily cron is the primary watch — dates lapse with no push at
+# all. The push trigger exists only to close the latency gap after a fix
+# merges (a samples refresh otherwise leaves its tracking issue stale-open
+# until the next cron, up to ~24h). It fires on main only, so the issues
+# always reflect merged state. Deliberately NOT on pull_request: both jobs
+# measure the calendar, not the diff — a PR run would checkout branch state
+# and mutate the tracking issues from unmerged content (and multiply the
+# ClickUp reconcile passes chained on this workflow's runs).
 
 on:
   schedule:
     - cron: '0 1 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'brand/**'
+      - 'strategy/**'
+      - 'reference/**'
 
 permissions:
   contents: read

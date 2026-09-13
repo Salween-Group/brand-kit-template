@@ -154,6 +154,25 @@ project chat and crowds out the content.
   legitimately contains its own client's name. The template carries no live stamp values
   of its own; it *is* the schema.
 
+- **Sections are referenced by name, never by number.** The numbers on
+  `brand-context.md`'s headings are display sugar — they help a reader scan, and
+  nothing may depend on them. Every cross-reference in a kit quotes the section
+  *name* instead (`brand-context.md § "Sensitive Topics & Guardrails"`), because a
+  kit that inserts a client-specific section shifts every number below it and would
+  otherwise break every pointer at once.
+
+  That makes the **names** load-bearing, so they are part of the schema: a kit uses
+  this template's heading text verbatim for the sections it has. A near-miss — an
+  ampersand where the template writes one, or the reverse — is invisible to a reader
+  and fatal to any tool that looks a section up by name, and it will not be caught by
+  a kit's own referential-integrity check, because a kit whose pointers match its own
+  divergent headings is internally consistent.
+
+  Kits **may** add sections this template does not carry — a client in the middle of
+  a rebrand, a client with an approved data-source register. Add them at the tail
+  where possible, keep the template's sections in their template order, and nothing
+  positional breaks.
+
 ### File structure
 
 ```

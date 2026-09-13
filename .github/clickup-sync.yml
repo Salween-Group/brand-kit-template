@@ -9,6 +9,15 @@
 #   assignee_id:   numeric ClickUp user id of the account manager, who is
 #                  assigned every mirrored task (optional — leave empty to
 #                  create tasks unassigned)
+#   observation_assignee_id:
+#                  optional numeric ClickUp user id. Issues additionally
+#                  labelled `observation` go to this person instead of the
+#                  account manager. An observation is a finding some skill
+#                  noticed in passing -- a spokesperson named two ways, a
+#                  published claim that contradicts a guardrail -- which needs
+#                  a judgement about the kit before anyone acts on it. Leave
+#                  empty and observations follow assignee_id like everything
+#                  else.
 #   due_in_days:   optional whole number; new tasks get a due date this many
 #                  days after creation (applied at creation only — later
 #                  issue edits never touch the due date)
@@ -24,5 +33,6 @@
 
 list_id:
 assignee_id:
+observation_assignee_id:
 due_in_days:
 custom_fields:

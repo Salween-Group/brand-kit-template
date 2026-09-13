@@ -33,6 +33,15 @@ name: ClickUp issue sync
 # its lifecycle follows through on issue events regardless of labels (the
 # reconcile pass, which enumerates by label, covers labelled issues only).
 #
+# TWO KINDS OF ISSUE, TWO POSSIBLE OWNERS. Holds and freshness signals are the
+# account team's to act on. An issue additionally labelled `observation` is a
+# finding some skill noticed in passing — a spokesperson named two ways, a
+# published claim that contradicts a guardrail — which needs a judgement about
+# the kit before anyone acts on it, and that is not always the same person.
+# A kit may therefore set observation_assignee_id to route those; left unset,
+# observations follow assignee_id like everything else. The label gates the
+# routing only — `clickup` is still what opts an issue into the mirror at all.
+#
 # Per-kit wiring lives in .github/clickup-sync.yml: which list, optionally
 # who to assign, and optional task defaults applied at CREATION only — a due
 # date N days out (due_in_days) and workspace custom fields (custom_fields,
@@ -123,6 +132,7 @@ jobs:
 
           LIST_ID=$(cfg_get list_id)
           ASSIGNEE_ID=$(cfg_get assignee_id)
+          OBSERVATION_ASSIGNEE_ID=$(cfg_get observation_assignee_id)
           DUE_IN_DAYS=$(cfg_get due_in_days)
           CUSTOM_FIELDS_JSON=$(cfg_get_raw custom_fields)
 
@@ -174,15 +184,33 @@ jobs:
               | jq -r --arg t "$1" '[.statuses[] | select(.type==$t) | .status][0] // empty'
           }
 
-          create_task() { # issue_number task_name description
-            local num=$1 task_name=$2 description=$3 payload resp task_id task_url
+          create_task() { # issue_number task_name description labels
+            local num=$1 task_name=$2 description=$3 labels=${4:-} payload resp task_id task_url effective_assignee
             payload=$(jq -n --arg n "$task_name" --arg d "$description" \
               '{name:$n, markdown_description:$d}')
-            if printf '%s' "$ASSIGNEE_ID" | grep -Eq '^[0-9]+$'; then
+
+            # WHO GETS IT depends on what kind of issue this is. A hold or a
+            # freshness signal is the account team's to act on, so it goes to
+            # assignee_id. An `observation` issue is a finding a skill noticed
+            # in passing — a name spelled two ways, a published claim that
+            # contradicts a guardrail — which needs a judgement about the kit
+            # itself before anyone acts, so a kit may route those elsewhere via
+            # the optional observation_assignee_id. Unset, observations follow
+            # assignee_id like everything else.
+            effective_assignee=$ASSIGNEE_ID
+            if printf '%s' ",$labels," | grep -q ',observation,'; then
+              if printf '%s' "$OBSERVATION_ASSIGNEE_ID" | grep -Eq '^[0-9]+$'; then
+                effective_assignee=$OBSERVATION_ASSIGNEE_ID
+              elif [ -n "$OBSERVATION_ASSIGNEE_ID" ]; then
+                echo "::warning::observation_assignee_id in $CFG is not a numeric ClickUp user id — falling back to assignee_id."
+              fi
+            fi
+
+            if printf '%s' "$effective_assignee" | grep -Eq '^[0-9]+$'; then
               payload=$(printf '%s' "$payload" \
-                | jq --argjson a "[$ASSIGNEE_ID]" '. + {assignees:$a}')
-            elif [ -n "$ASSIGNEE_ID" ]; then
-              echo "::warning::assignee_id in $CFG is not a numeric ClickUp user id — creating the task unassigned."
+                | jq --argjson a "[$effective_assignee]" '. + {assignees:$a}')
+            elif [ -n "$effective_assignee" ]; then
+              echo "::warning::assignee id in $CFG is not a numeric ClickUp user id — creating the task unassigned."
             fi
             # Creation-time defaults from the kit config. They apply to NEW
             # tasks only — later passes never touch them, so the account
@@ -275,7 +303,7 @@ jobs:
                     echo "#$num is open with no clickup label and no mirror — skipping (the mirror is opt-in)."
                     return 0 ;;
                 esac
-                create_task "$num" "$task_name" "$description"
+                create_task "$num" "$task_name" "$description" "$labels"
               fi
             else
               if [ -z "$task_id" ]; then

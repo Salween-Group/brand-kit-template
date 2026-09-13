@@ -138,7 +138,7 @@ Words and phrases that must never appear in brand communications — things that
 
 - **Brand voice person:** [e.g. "First person plural — 'we', 'our', 'us'"]
 - **Addressing the reader:** [e.g. "Second person — 'you', 'your'"]
-- **CEO / leadership quotes:** [e.g. "First person singular — 'I believe', attributed by name and title"]
+- **CEO / leadership quotes:** [e.g. "First person singular — 'I believe', attributed by name and title"]. Names and titles come from `brand/brand-context.md` § "Approved spokespeople" — never from memory or a previous asset.
 - **Product documentation:** [e.g. "Second person imperative — 'Click the button', 'Enter your details'"]
 
 ---

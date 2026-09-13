@@ -24,11 +24,23 @@ name: Kit lint
 #   4. The evidence register uses its own vocabulary. Status must be one of
 #      usable | on hold (see live-holds) | gap-to-close | retired, and every
 #      on-hold row must point at live-holds.
+#   5. Section references resolve. Cross-references of the form
+#      `§ "Name"` must match a real section — H2-H4 heading or bold run-in
+#      label, by prefix — in the file they name, or anywhere in the kit when
+#      they name none. Sections are referenced by name and never by number,
+#      so the names are load-bearing; unenforced, a rename that misses one
+#      reference produces no error anywhere, just a pointer that silently
+#      stops resolving.
 #
 # Scope notes: build products, history, and docs are exempt from the pointer
-# check (CHANGELOG legitimately references deleted holds; the voice-guardian
-# pack is governed by its own freshness gates; README and docs/ document the
-# pointer convention with literal examples).
+# checks (CHANGELOG legitimately references deleted holds and quotes section
+# names as they were at the time; the voice-guardian pack is governed by its
+# own freshness gates; README and docs/ document both pointer conventions with
+# literal examples, and would otherwise fail the rules they explain).
+# Check 5 sees only naming that is broken WITHIN a kit. A kit whose headings
+# diverge from the template but whose own references match that divergence is
+# internally consistent and passes here by design — cross-kit comparison is
+# kit-doctor's job, not lint's.
 # Missing files are skipped — file inventory is kit-doctor's job, not lint's.
 # On the template itself, placeholder values (YYYY-MM-DD) downgrade to
 # warnings so the scaffold stays green.
@@ -224,6 +236,133 @@ jobs:
               }
             ' "$EV")
           fi
+
+          # ---------- 5. Section-name reference integrity ----------
+
+          # Sections are referenced by NAME, never by number (numbers shift when a kit
+          # inserts a client-specific section). That makes the names load-bearing, and
+          # unenforced they rot silently: a rename that misses one reference produces
+          # no error anywhere, just a pointer that no longer resolves.
+          #
+          # Scope: `§ "Name"` references. Lines containing → are skipped — that form is
+          # reserved for live-holds pointers and check 1 owns it.
+          #
+          # Resolution: a reference may name its target file (`brand-voice.md § "…"`,
+          # with or without the extension, with or without backticks). A preceding word
+          # is treated as a filename ONLY if it matches a real kit file stem — ordinary
+          # English precedes § constantly ("in", "see", "and", "the"), and reading those
+          # as filenames invents failures. A bare `§ "Name"` resolves against any
+          # section in the kit, because bare references routinely point at another file.
+          #
+          # Targets are H2-H4 headings (references legitimately point at sub-sections)
+          # with multi-level numbering stripped (3.1, 5.3), plus bold run-in labels
+          # (`**Name:**`), which some references point at instead of a true heading.
+          # Matching is by PREFIX, the same contract check 1 uses for hold pointers.
+
+          REF_HEADINGS=$(mktemp)
+          REF_UNION=$(mktemp)
+          REF_HITS=$(mktemp)
+          REF_STEMS=$(mktemp)
+
+          mapfile -t ALLMD < <(git ls-files '*.md' | grep -v -E '^docs/' || true)
+
+          if [ "${#ALLMD[@]}" -gt 0 ]; then
+            for f in "${ALLMD[@]}"; do
+              stem=$(basename "$f" .md)
+              printf '%s\t%s\n' "$stem" "$f" >> "$REF_STEMS"
+              awk -v F="$f" '
+                /<!--/ { inc=1 }
+                /-->/  { inc=0; next }
+                inc    { next }
+                /^## |^### |^#### / {
+                  h=$0
+                  sub(/^#+[ \t]+/, "", h)
+                  sub(/^[0-9]+(\.[0-9]+)*[.)]?[ \t]+/, "", h)
+                  gsub(/^[ \t]+|[ \t]+$/, "", h)
+                  if (h != "") printf "%s\t%s\n", F, h
+                  next
+                }
+                /^\*\*[^*]+\*\*/ {
+                  if (match($0, /^\*\*[^*]+\*\*/)) {
+                    t = substr($0, 3, RLENGTH-4)
+                    sub(/:$/, "", t)
+                    gsub(/^[ \t]+|[ \t]+$/, "", t)
+                    if (t != "") printf "%s\t%s\n", F, t
+                  }
+                }
+              ' "$f" >> "$REF_HEADINGS"
+            done
+            cut -f2 "$REF_HEADINGS" | sort -u > "$REF_UNION"
+
+            # Files that MAY CARRY references. The changelog is an append-only record
+            # that legitimately quotes section names as they were at the time; the pack
+            # is a build product; README and docs/ document the convention with literal
+            # examples and would fail the rule they explain.
+            mapfile -t REF_SCAN < <(printf '%s\n' "${ALLMD[@]}" \
+              | grep -v -E '^(brand/CHANGELOG\.md|reference/voice-guardian-pack\.md|README\.md)$' || true)
+
+            if [ "${#REF_SCAN[@]}" -gt 0 ]; then
+              awk '
+                index($0, "\342\206\222") > 0 { next }   # arrow form is a hold pointer; check 1 owns it
+                {
+                  n = split($0, seg, "\302\247")
+                  for (i = 2; i <= n; i++) {
+                    s = seg[i]; q = ""
+                    if (match(s, /^[ \t]*"[^"]+"/)) {
+                      q = substr(s, RSTART, RLENGTH); sub(/^[ \t]*"/, "", q); sub(/"$/, "", q)
+                    } else if (match(s, /^[ \t]*\342\200\234[^\342]+\342\200\235/)) {
+                      q = substr(s, RSTART, RLENGTH)
+                      sub(/^[ \t]*\342\200\234/, "", q); sub(/\342\200\235$/, "", q)
+                    }
+                    if (q == "") continue
+
+                    # A file reference counts only when it sits IMMEDIATELY before the section
+                    # mark, separated by whitespace alone, and looks like a filename. The
+                    # candidate is VALIDATED, never scrubbed into shape: in
+                    #   ... § "Brand Positioning", § "Key Differentiators" ...
+                    # the token before the second mark is `Positioning",` — stripping its
+                    # punctuation would turn a quoted section name into a bogus file
+                    # reference and invent a failure.
+                    fr = ""
+                    p = seg[i-1]
+                    if (p ~ /[ \t]$/) {
+                      t = p
+                      sub(/[ \t]+$/, "", t)
+                      m = split(t, toks, /[ \t]/)
+                      cand = (m > 0) ? toks[m] : ""
+                      gsub(/^`|`$/, "", cand)
+                      if (cand ~ /^[A-Za-z][A-Za-z0-9_.\/-]*$/) {
+                        sub(/\.md$/, "", cand)
+                        sub(/^.*\//, "", cand)
+                        fr = cand
+                      }
+                    }
+                    printf "%s\t%d\t%s\t%s\n", FILENAME, FNR, fr, q
+                  }
+                }
+              ' "${REF_SCAN[@]}" > "$REF_HITS"
+
+              while IFS=$'\t' read -r rf rl fr name; do
+                if [ -z "$name" ]; then continue; fi
+                esc=$(printf '%s' "$name" | sed 's/[][\.*^$/]/\\&/g')
+                tgt=""
+                if [ -n "$fr" ]; then
+                  tgt=$(awk -F'\t' -v s="$fr" 'tolower($1)==tolower(s){print $2; exit}' "$REF_STEMS")
+                fi
+                if [ -n "$tgt" ]; then
+                  if ! awk -F'\t' -v t="$tgt" '$1==t{print $2}' "$REF_HEADINGS" | grep -q "^$esc"; then
+                    fail "$rf:$rl — section reference \"$name\" matches no section in $tgt (prefix match)."
+                  fi
+                else
+                  if ! grep -q "^$esc" "$REF_UNION"; then
+                    fail "$rf:$rl — section reference \"$name\" matches no section anywhere in the kit (prefix match)."
+                  fi
+                fi
+              done < "$REF_HITS"
+            fi
+          fi
+
+          rm -f "$REF_HEADINGS" "$REF_UNION" "$REF_HITS" "$REF_STEMS"
 
           rm -f "$HEADINGS_FILE"
 

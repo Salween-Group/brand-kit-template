@@ -63,12 +63,23 @@ permissions:
   contents: read
   issues: write
 
-# Events for the same issue can land close together (opened + an immediate
-# edit); serialise them so two runs never both decide to create a task.
-# Reconcile runs share one group; the 2-minute freshness guard in the
-# reconcile enumeration keeps them off issues whose event run is in flight.
+# ONE GROUP PER REPO, deliberately. Events for the same issue can land close
+# together (opened + an immediate edit), and a reconcile pass can run while an
+# issues-event run is still going — so every run of this workflow serialises
+# against every other, and two runs can never both decide to create a task.
+#
+# Keying on github.event.issue.number instead would put each issues-event run
+# in its own group while ALL reconcile runs shared one empty-suffix group,
+# because workflow_run and schedule carry no issue number. Reconcile would then
+# never serialise against an issues run — the one overlap that actually
+# matters — and the freshness cutoff in the reconcile enumeration was standing in
+# for locking it could not provide.
+#
+# Serialising every run is safe and costs only ordering: the mirror is
+# state-driven and idempotent, so the outcome never depends on which run goes
+# first.
 concurrency:
-  group: clickup-sync-${{ github.event.issue.number }}
+  group: clickup-sync-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -291,11 +302,38 @@ jobs:
             sync_issue "$ISSUE_NUMBER"
           else
             # Reconcile: visit every clickup-labelled issue updated in the
-            # last 14 days, skipping ones touched in the last 2 minutes —
-            # their issues-event run (if any) is likely still in flight.
+            # last 14 days.
+            #
+            # NO FRESHNESS CUTOFF ON workflow_run. This pass is chained to the
+            # holds-expiry check, which CREATES OR EDITS its tracking issue as
+            # its final action and only then completes — which is what fires
+            # workflow_run. This run therefore starts 1-2s after that issue was
+            # touched, so a "skip anything updated in the last 2 minutes" guard
+            # excluded it every single time: the chain latency is fixed and two
+            # orders of magnitude below the window, making the exclusion
+            # deterministic rather than a race. And because GitHub fires no
+            # issues events for actions taken with another workflow's
+            # GITHUB_TOKEN, reconcile is the ONLY path that can ever mirror
+            # those issues — so the guard deferred them to a run that never
+            # happens, and they waited for the daily scheduled pass instead,
+            # up to ~24h late.
+            #
+            # What that guard was protecting against — a reconcile colliding
+            # with an in-flight issues-event run — is now handled properly by
+            # the repo-wide concurrency group above, which actually serialises
+            # the two. A timestamp heuristic cannot.
+            #
+            # The cutoff is kept for schedule and workflow_dispatch, where a
+            # human edit may genuinely still be in flight and there is no
+            # urgency: those passes are backstops, and anything they skip is
+            # picked up by the next one.
             echo "Reconcile pass ($EVENT_NAME)."
             SINCE=$(date -u -d '14 days ago' +%FT%TZ)
-            CUTOFF=$(date -u -d '2 minutes ago' +%FT%TZ)
+            if [ "$EVENT_NAME" = "workflow_run" ]; then
+              CUTOFF=$(date -u -d '+1 hour' +%FT%TZ)   # effectively no cutoff
+            else
+              CUTOFF=$(date -u -d '2 minutes ago' +%FT%TZ)
+            fi
             NUMS=$(gh api "repos/$GH_REPO/issues?state=all&labels=clickup&since=$SINCE&per_page=100" \
               --jq "[.[] | select(.pull_request | not) | select(.updated_at < \"$CUTOFF\") | .number] | .[]") || true
             if [ -z "$NUMS" ]; then

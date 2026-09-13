@@ -168,24 +168,33 @@ articles, leadership video, conference attributions.
 > **name and title**. That rule needs a source of truth, or every quote becomes a
 > fresh research task and titles drift between assets. This is that source.
 
-| Name | Title | Title verified | May be quoted or bylined | Approval route |
-|---|---|---|---|---|
-| [Full name] | [Exact current title] | [Where the title was confirmed + date — e.g. "press release, 12 Mar 2026"] | [Yes / No — tagging only] | [Who signs off] |
+| Name | Title | Used for | Approval route |
+|---|---|---|---|
+| [Full name] | [Exact current title] | [What this person is actually used for — e.g. "article quotes, leadership video"; or "tagging only"] | [Who signs off] |
 
-**Title verified is not optional.** A title that nobody can trace is a title that
-will be contradicted by the next press release. Record where each one came from
-and when: an official announcement, the client's own confirmation, a verified
-profile. Where two sources disagree, the most recent *official* one wins and the
+**Titles must be traceable — but that is a rule, not a column.** A title nobody
+can trace will be contradicted by the next press release, so know where each one
+came from: an official announcement, the client's own confirmation, a verified
+profile. Where two sources disagree the most recent *official* one wins, and the
 disagreement is worth flagging — a person appearing under two titles in two
-assets is a visible error, and the cheapest place to catch it is here.
+assets is a visible error.
+
+This was a fifth column once, and it is deliberately not one now. Across the
+fleet it was never filled in a single kit, and the one account team that
+populated this table dropped the column outright while filling the rest. A
+column that is always empty teaches readers to skim the table rather than trust
+it. Where a title genuinely needs chasing, the next rule is the mechanism —
+record it as a hold with a lift condition, where it is someone's job, rather
+than as a permanently blank cell.
 
 **Two different jobs — keep them apart.**
 
 - **Tagging and mention correctness** applies to *anyone* senior who gets named
   or tagged: full name, current title, correct spelling. The standing rule lives
   in § "Sensitive Topics & Guardrails"; this table is what it checks against.
-- **Quote and byline authority** applies to the smaller approved set marked in
-  the column above. Being taggable is not the same as being quotable.
+- **Quote and byline authority** applies to the smaller set whose **Used for**
+  entry says so. Being taggable is not the same as being quotable — a person
+  recorded as "tagging only" is named correctly in copy and never speaks in it.
 
 Conflating the two produces a predictable failure: an unconfirmed title on one
 person blocks every quote and byline on the account, while a dozen other people

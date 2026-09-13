@@ -154,3 +154,66 @@ Things Claude should avoid or handle carefully when representing this brand.
 - **Avoid topics:** [e.g. "Do not comment on competitor pricing"]
 - **Legal requirements:** [e.g. "All financial content must include the disclaimer: '...'"]
 - **Cultural sensitivities:** [e.g. "Avoid idioms that don't translate well — audience is pan-Asian"]
+- **Executive names and titles:** always use the full name and current title when quoting, tagging or mentioning anyone senior, and re-verify immediately before publication rather than at the point of approval — people change roles while content sits in a queue. The roster this checks against is § "Approved spokespeople".
+
+---
+
+## 9. Approved spokespeople
+
+The named individuals whose words may appear as the brand's — quotes, bylined
+articles, leadership video, conference attributions.
+
+> **Why this is a section and not a contact list.** `brand-voice.md`
+> § "Point of View & Pronouns" requires leadership quotes to be attributed by
+> **name and title**. That rule needs a source of truth, or every quote becomes a
+> fresh research task and titles drift between assets. This is that source.
+
+| Name | Title | Title verified | May be quoted or bylined | Approval route |
+|---|---|---|---|---|
+| [Full name] | [Exact current title] | [Where the title was confirmed + date — e.g. "press release, 12 Mar 2026"] | [Yes / No — tagging only] | [Who signs off] |
+
+**Title verified is not optional.** A title that nobody can trace is a title that
+will be contradicted by the next press release. Record where each one came from
+and when: an official announcement, the client's own confirmation, a verified
+profile. Where two sources disagree, the most recent *official* one wins and the
+disagreement is worth flagging — a person appearing under two titles in two
+assets is a visible error, and the cheapest place to catch it is here.
+
+**Two different jobs — keep them apart.**
+
+- **Tagging and mention correctness** applies to *anyone* senior who gets named
+  or tagged: full name, current title, correct spelling. The standing rule lives
+  in § "Sensitive Topics & Guardrails"; this table is what it checks against.
+- **Quote and byline authority** applies to the smaller approved set marked in
+  the column above. Being taggable is not the same as being quotable.
+
+Conflating the two produces a predictable failure: an unconfirmed title on one
+person blocks every quote and byline on the account, while a dozen other people
+are tagged correctly all week.
+
+**External quote sources are not spokespeople.** Partner, client or analyst
+quotes secured for a specific piece belong to that piece, not to this roster.
+Record the rule for what happens when one does not arrive by deadline — e.g.
+whether the piece proceeds on the internal quote alone.
+
+**Pending confirmations are holds, not blanks.** A title that is genuinely
+unknown does not sit in this table as `[TBC]` — it goes in
+`brand/live-holds.md` with a lift condition and a review-by date, so the expiry
+watch chases it. Leaving it blank here makes the gap invisible; the hold makes it
+someone's job.
+
+**Verify immediately before publication, not at approval.** People change roles
+while content sits in a queue. Any pre-approved asset held in a library must have
+its named individuals and titles re-checked at the point it ships. This table
+going stale is the main risk it carries, so treat it as high-churn: review it on
+the same rhythm as the rest of the operational layer, and never let a reader
+assume it is current because it exists.
+
+**Availability is not the same as seniority.** The most senior name is not always
+the one who appears. If some individuals delegate events, or one person is
+consistently the public face, record that here as a planning note — it saves
+proposing a speaker who was never going to be available.
+
+> [Planning note — e.g. "X rarely attends events in person and delegates panel
+> appearances; Y is the most consistent stage presence. Check availability before
+> naming anyone in event or campaign plans."]

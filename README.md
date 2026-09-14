@@ -9,7 +9,7 @@ Starting template for our client brand kits. Markdown files for use with LLMs an
 | `strategy/message-house.md` | Messaging architecture: roof, pillars, language bank — derived from the positioning | Strategy and messaging work, campaign planning — **not** loaded for everyday copy |
 | `brand/brand-context.md` | Positioning distilled, audiences, competitors, products, durable guardrails | Understanding who the brand is and who it speaks to |
 | `brand/brand-voice.md` | Tone, vocabulary, writing rules, example pairs | Writing any copy or content |
-| `brand/brand-visual.md` | Colours, typography, spacing, layout, slide/email defaults | Generating HTML, presentations, design briefs |
+| `brand/brand-visual.md` | Pointer to the canonical visual source, production palette/type, document & deck conventions, visual decisions log | Generating branded documents, decks, reports, HTML |
 | `brand/live-holds.md` | Time-bound holds: embargoes, hold-until-announced items, changes awaiting client confirmation — each with scope, lift condition, review-by date | Checked before finalising content; entries are removed when they lift |
 | `brand/retired-language.md` | Phrases that were once canonical and are now superseded — enforced by CI | Never quoted in content; CI fails the build if a listed phrase reappears |
 | `brand/CHANGELOG.md` | Kit version history plus the ledger of Fathom calls already mined | Reviewed on GitHub; read by brand-sync for call dedupe — never loaded into content chats |

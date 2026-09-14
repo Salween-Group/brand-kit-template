@@ -2,208 +2,105 @@
 
 <!--
   client:        [Client Name]
-  version:       1.0
+  version:       2.0
   last_updated:  YYYY-MM-DD
   review_cadence: per-rebrand   # rebuilt when the design system changes; event-driven, not date-checked
   maintained_by: [Your Name / Team]
 -->
 
-> **Purpose:** This document gives our tools the specifications needed to generate branded HTML, presentations, artifacts, and design briefs. It is not a replacement for the full brand guidelines PDF — it is a machine-readable reference optimised for AI-assisted content production.
+> **Purpose:** This file gives our tools the visual values they actually read when
+> generating branded documents, decks, reports and HTML — plus a home for visual
+> rulings that otherwise die in delivery threads. It is deliberately small. It is
+> **not** a copy of the client's brand guidelines: those live wherever the client
+> keeps them, and § "Visual source" points there. Duplicating a design system into
+> markdown rots at the next rebrand; pointing at it does not.
 
 ---
 
-## 1. Colour Palette
+## Visual source
 
-### Primary Colours
+Required, even when nothing else in this file is filled. A kit that cannot name
+its visual source has a real finding; a kit that names one and declines to
+duplicate it does not.
 
-| Name             | Hex       | RGB              | Usage Rules                                          |
-|------------------|-----------|------------------|------------------------------------------------------|
-| [e.g. "Navy"]    | `#1A2B4A` | `rgb(26,43,74)`  | [e.g. "Primary brand colour. Headings, CTAs, nav."]  |
-| [e.g. "White"]   | `#FFFFFF` | `rgb(255,255,255)`| [e.g. "Default background. Body text on dark."]       |
+| Field | Value |
+|---|---|
+| Canonical source | [e.g. "Corporate brand guidelines v3 (PDF, client's DAM)" / "Design-token set in the client's design system repo" / "Parent-group guidelines — this brand realigns to them"] |
+| Where it lives | [e.g. "Shared drive link / DAM URL / repo path — wherever the team actually fetches it"] |
+| State | [e.g. "current" / "rebrand in progress, new system expected [Month Year] — values below will be re-cut then" / "awaiting guidelines from the client — nothing below is real yet"] |
+| Owner / contact | [e.g. "Client marketing lead / our design lead"] |
 
-### Secondary Colours
-
-| Name               | Hex       | RGB                | Usage Rules                                          |
-|--------------------|-----------|--------------------|------------------------------------------------------|
-| [e.g. "Teal"]      | `#00B4A6` | `rgb(0,180,166)`   | [e.g. "Accent colour. Links, highlights, icons."]    |
-| [e.g. "Light Grey"] | `#F2F4F6` | `rgb(242,244,246)` | [e.g. "Section backgrounds, card fills."]            |
-
-### Functional / UI Colours
-
-| Purpose    | Hex       | Usage                               |
-|------------|-----------|--------------------------------------|
-| Success    | `#2E7D32` | [e.g. "Confirmations, positive KPIs"] |
-| Warning    | `#F9A825` | [e.g. "Alerts, caution states"]       |
-| Error      | `#D32F2F` | [e.g. "Error messages, destructive actions"] |
-| Info       | `#1565C0` | [e.g. "Informational callouts"]       |
-
-### Colour Usage Rules
-
-- **Maximum colours per layout:** [e.g. "3 brand colours + 1 neutral + 1 accent"]
-- **Background/foreground contrast:** [e.g. "Minimum WCAG AA (4.5:1 for body text, 3:1 for large text)"]
-- **Gradient usage:** [e.g. "Permitted: Navy → Teal, left to right. No radial gradients."]
-- **Dark mode:** [e.g. "Not currently defined" or provide dark palette hex codes]
-
-### CSS Custom Properties (for HTML outputs)
-
-```css
-:root {
-  --brand-primary:    #1A2B4A;
-  --brand-secondary:  #00B4A6;
-  --brand-white:      #FFFFFF;
-  --brand-light-grey: #F2F4F6;
-  --brand-dark-text:  #1A1A1A;
-  --brand-body-text:  #4A4A4A;
-  --brand-success:    #2E7D32;
-  --brand-warning:    #F9A825;
-  --brand-error:      #D32F2F;
-}
-```
+> If the client publishes **design tokens** (the W3C DTCG format is the common
+> shape), point at the token set here and treat § "Production palette & type"
+> as a derived excerpt, never a competing source.
 
 ---
 
-## 2. Typography
+## Production palette & type
 
-### Font Families
+The values our document, report and HTML generators read. Keep it to what
+production uses — the full palette stays in the canonical source.
 
-| Role           | Font Family                  | Fallback Stack                                | Weight(s)       |
-|----------------|------------------------------|-----------------------------------------------|-----------------|
-| **Headings**   | [e.g. "Inter"]               | [e.g. "'Inter', 'Helvetica Neue', sans-serif"] | [e.g. "600, 700"] |
-| **Body**       | [e.g. "Inter"]               | [e.g. "'Inter', 'Helvetica Neue', sans-serif"] | [e.g. "400, 500"] |
-| **Monospace**  | [e.g. "JetBrains Mono"]      | [e.g. "'JetBrains Mono', 'Fira Code', monospace"] | [e.g. "400"]  |
-| **Display**    | [e.g. "Playfair Display"]    | [e.g. "'Playfair Display', Georgia, serif"]    | [e.g. "700"]    |
+### Palette
 
-**Google Fonts import (if applicable):**
-```
-https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
-```
+| Name | Hex | Usage |
+|------|-----|-------|
+| [e.g. "Primary"] | `#1A2B4A` | [e.g. "H1 text, accents, chart series 1"] |
+| [e.g. "Secondary"] | `#00B4A6` | [e.g. "Highlights, links, chart series 2"] |
+| [e.g. "Neutral"] | `#F2F4F6` | [e.g. "Panel and callout backgrounds"] |
+| [e.g. "Text"] | `#1A1A1A` | [e.g. "Body text"] |
 
-### Type Scale
+### Type
 
-| Element        | Size   | Weight | Line Height | Letter Spacing | Colour             |
-|----------------|--------|--------|-------------|----------------|---------------------|
-| H1             | 40px   | 700    | 1.2         | -0.02em        | `--brand-primary`   |
-| H2             | 32px   | 600    | 1.25        | -0.01em        | `--brand-primary`   |
-| H3             | 24px   | 600    | 1.3         | 0              | `--brand-dark-text` |
-| H4             | 20px   | 600    | 1.35        | 0              | `--brand-dark-text` |
-| Body           | 16px   | 400    | 1.6         | 0              | `--brand-body-text` |
-| Body (small)   | 14px   | 400    | 1.5         | 0.01em         | `--brand-body-text` |
-| Caption        | 12px   | 500    | 1.4         | 0.02em         | `--brand-body-text` |
-| Button / CTA   | 14px   | 600    | 1           | 0.03em         | `--brand-white`     |
+| Role | Font | Fallback stack | Notes |
+|------|------|----------------|-------|
+| Headings | [e.g. "Inter"] | [e.g. "'Inter', 'Helvetica Neue', sans-serif"] | [e.g. "600/700; embed or install for Word outputs"] |
+| Body | [e.g. "Inter"] | [e.g. "'Inter', 'Helvetica Neue', sans-serif"] | [e.g. "400"] |
 
-### Typography Rules
-
-- **Heading case:** [e.g. "Sentence case for all headings. Never ALL CAPS except acronyms."]
-- **Maximum line width:** [e.g. "680px / ~75 characters for body text"]
-- **Paragraph spacing:** [e.g. "1em between paragraphs; no first-line indent"]
-- **Emphasis:** [e.g. "Use bold for emphasis, not italics or underline. Never use colour alone for emphasis."]
+- **Heading case:** [e.g. "H1 AP Title Case; H2 and below sentence case" — this rule is read by every document generator, so state it exactly]
 
 ---
 
-## 3. Logo Usage
+## Document & deck conventions
 
-### Available Logo Variants
+The rules that are native to *our* deliverables and exist in no guidelines PDF.
+This section, not the palette, is usually where the real value is.
 
-| Variant              | Filename              | Use When                                       |
-|----------------------|-----------------------|-------------------------------------------------|
-| Primary (full colour) | `logo-primary.svg`   | [e.g. "Default. Use on white or light backgrounds."] |
-| Reversed (white)     | `logo-reversed.svg`   | [e.g. "On dark or photographic backgrounds."]   |
-| Monochrome (black)   | `logo-mono.svg`       | [e.g. "Single-colour print, fax, engraving."]   |
-| Icon / mark only     | `logo-icon.svg`       | [e.g. "Favicons, social avatars, small spaces."] |
-
-### Logo Rules
-
-- **Minimum clear space:** [e.g. "Equal to the height of the logomark on all sides"]
-- **Minimum display size:** [e.g. "24px height for digital; 10mm for print"]
-- **Placement:** [e.g. "Top-left for web headers; centred for presentations and documents"]
-- **Never:** [e.g. "Stretch, rotate, recolour, add drop shadows, place on busy backgrounds without overlay"]
+- **Word documents:** [e.g. "Cover: title + client logo; footer: page number right; DRAFT watermark until sign-off"]
+- **Charts and data visuals:** [e.g. "Flat bars/lines in palette order above; no 3D; minimal gridlines"]
+- **Slides:** [e.g. "16:9; logo top-left; max ~40 words per content slide"]
+- **Report covers:** [e.g. "Match the reports index page; no descriptive copy on the cover"]
 
 ---
 
-## 4. Imagery & Photography
+## Visual decisions
 
-### Photography Style
+Rulings made in delivery — client feedback on lockups, motion, layout density,
+photo treatment — recorded here with the same provenance discipline as a hold,
+so they stop being rediscovered by collision. Newest first. This table is
+expected to grow continuously; it needs no rebrand to change.
 
-- **Subjects:** [e.g. "Real people in real work environments. No stock photo clichés (handshakes, pointing at screens)."]
-- **Lighting:** [e.g. "Natural or soft studio lighting. Avoid harsh flash or heavy filters."]
-- **Colour treatment:** [e.g. "Slightly desaturated, warm whites. No heavy colour grading."]
-- **Composition:** [e.g. "Generous negative space on one side for text overlay."]
-- **Diversity:** [e.g. "Reflect our audience: pan-Asian, mixed age, gender-balanced."]
-
-### Illustration Style
-
-- **Style:** [e.g. "Flat vector, geometric. No 3D renders or skeuomorphism."]
-- **Colour palette:** [e.g. "Use brand palette only. Primary + one accent per illustration."]
-- **Line weight:** [e.g. "2px uniform stroke if using outlines."]
-- **Icons:** [e.g. "Line icons, 24×24 base grid, 1.5px stroke, rounded caps."]
-
-### Stock Image Guidelines
-
-- **Approved sources:** [e.g. "Unsplash, Pexels, or licensed via Shutterstock account"]
-- **Avoid:** [e.g. "Overly staged scenes, obvious stock photo smiles, clip art, AI-generated faces"]
-- **AI-generated imagery policy:** [e.g. "Permitted for internal concepts only. Never in client-facing materials without approval."]
+| Date | Decision | Source |
+|------|----------|--------|
+| [YYYY-MM-DD] | [e.g. "Co-branding: never place our logo and a partner's side by side; stack with divider"] | [e.g. "Client design feedback, task link"] |
+| [YYYY-MM-DD] | [e.g. "Motion: GIF over MP4, under 15s, loops, assume muted autoplay, no background music"] | [e.g. "Client comment, date"] |
 
 ---
 
-## 5. Layout & Spacing
+## Asset locations
 
-### Grid System
+Where the real files live — a pointer, not an inventory.
 
-- **Columns:** [e.g. "12-column grid for web; 2–3 columns for print"]
-- **Gutter width:** [e.g. "24px (desktop), 16px (mobile)"]
-- **Max content width:** [e.g. "1200px with 80px horizontal padding"]
-- **Mobile breakpoint:** [e.g. "768px"]
-
-### Spacing Scale
-
-Use a consistent spacing scale (base unit = 8px):
-
-| Token  | Value | Use For                                |
-|--------|-------|----------------------------------------|
-| `xs`   | 4px   | Tight spacing within components        |
-| `sm`   | 8px   | Icon-to-label gaps, inline spacing     |
-| `md`   | 16px  | Component internal padding             |
-| `lg`   | 24px  | Between related sections               |
-| `xl`   | 40px  | Between distinct content sections      |
-| `2xl`  | 64px  | Major section breaks, hero padding     |
-| `3xl`  | 96px  | Page-level vertical rhythm             |
-
-### Component Patterns
-
-| Component       | Corner Radius | Shadow                        | Border                      |
-|-----------------|---------------|-------------------------------|-----------------------------|
-| Cards           | [e.g. "8px"]  | [e.g. "0 2px 8px rgba(0,0,0,0.08)"] | [e.g. "1px solid #E5E7EB"] |
-| Buttons         | [e.g. "6px"]  | [e.g. "None"]                 | [e.g. "None (filled) / 2px solid primary (outlined)"] |
-| Input fields    | [e.g. "6px"]  | [e.g. "None"]                 | [e.g. "1px solid #D1D5DB"]  |
-| Modals / popups | [e.g. "12px"] | [e.g. "0 8px 24px rgba(0,0,0,0.15)"] | [e.g. "None"]         |
+- **Logos:** [e.g. "DAM folder / shared drive path; use primary on light, reversed on dark"]
+- **Fonts:** [e.g. "Licensed via X; webfont kit at Y"]
+- **Photography / template library:** [e.g. "Where approved imagery and deck templates live"]
 
 ---
 
-## 6. Presentation Slide Defaults
+## Extended specification (optional)
 
-Use these when Claude generates `.pptx` or HTML slide decks.
-
-- **Slide dimensions:** [e.g. "16:9 (1920×1080)"]
-- **Title slide:** [e.g. "Logo top-left, title centred, subtitle below in lighter weight"]
-- **Content slides:** [e.g. "Heading top-left, body text left-aligned, imagery right half"]
-- **Maximum text per slide:** [e.g. "40 words excluding headings"]
-- **Chart style:** [e.g. "Flat bars/lines in brand palette. No 3D. Minimal gridlines."]
-- **Footer:** [e.g. "Company name (left), confidentiality notice (centre), page number (right)"]
-
----
-
-## 7. Email & Digital Ads
-
-### Email
-
-- **Max width:** [e.g. "600px"]
-- **Header:** [e.g. "Logo centred, 20px padding top and bottom"]
-- **CTA button:** [e.g. "Primary colour background, white text, 6px radius, 48px height minimum"]
-- **Footer:** [e.g. "Light grey background, unsubscribe link, registered address"]
-
-### Digital Ads
-
-- **Standard sizes:** [e.g. "1200×628 (social), 1080×1080 (square), 1080×1920 (story)"]
-- **Text overlay limit:** [e.g. "20% of image area (Meta guideline)"]
-- **CTA placement:** [e.g. "Bottom-right for landscape, bottom-centre for square/portrait"]
-- **Animation:** [e.g. "Subtle fade/slide only. Max 15 seconds. Loop max 3 times."]
+Grid systems, UI component patterns, email and digital-ad specs were part of
+this template's v1 and were removed: no kit filled them in five months, and our
+kits do not generate those channels. If a client engagement genuinely needs
+them, restore the relevant v1 sections from this template's history rather than
+re-inventing the tables — and prefer pointing at the client's design system.

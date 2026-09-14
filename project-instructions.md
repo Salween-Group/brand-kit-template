@@ -17,7 +17,7 @@ Before producing any output, consult the relevant brand files.
 
 - **`brand/brand-context.md`** — For positioning, audience, competitors, and messaging hierarchy. Reference this when you need to understand *who* we're talking to and *why*.
 - **`brand/brand-voice.md`** — For tone, vocabulary, and writing style. Reference the "This, Not That" examples to calibrate your output. This is your primary guide for any written content.
-- **`brand/brand-visual.md`** — For colours, typography, spacing, and layout. Reference this when generating HTML, presentations, email templates, or design briefs.
+- **`brand/brand-visual.md`** — Where the canonical visual source lives, plus the production palette/type values, document and deck conventions, and the visual decisions log. Reference this when generating any branded document, deck, report, or HTML.
 - **`brand/live-holds.md`** — Time-bound holds: embargoes, hold-until-announced items, changes awaiting client confirmation. Check it before finalising any content; see "Applying guardrails and holds" below for how to apply it.
 - **`reference/approved-copy-samples.md`** — For full-length examples of approved client copy. Reference these to calibrate voice, rhythm, and structure before writing any content.
 
@@ -46,7 +46,7 @@ Before producing any output, consult the relevant brand files.
 
 - Write in the brand voice defined in `brand-voice.md` unless explicitly asked to deviate.
 - Use UK English spelling and conventions.
-- When generating HTML or visual artifacts, apply the colour palette and type scale from `brand-visual.md`.
+- When generating HTML or visual artifacts, apply the production palette and type from `brand-visual.md`, and check its § "Visual decisions" table for rulings that bear on the format.
 - When referencing products or services, use only the descriptions and terminology in `brand-context.md`. Do not invent features or benefits.
 - When stating claims or statistics, use only rows from `reference/evidence.md` with status `usable`, in their approved wording and with the correct vintage.
 - Respect all guardrails listed in the "Sensitive Topics & Guardrails" section of `brand-context.md`, and apply `brand/live-holds.md` per "Applying guardrails and holds" above.

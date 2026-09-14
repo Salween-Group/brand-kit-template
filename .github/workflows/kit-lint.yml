@@ -366,6 +366,35 @@ jobs:
 
           rm -f "$HEADINGS_FILE"
 
+          # ---------- 6. Empty retired-language table (warn only) ----------
+
+          # An empty retired-phrases table makes the retired-language CI gate a
+          # no-op, and it usually means retirement decisions are not being
+          # CAPTURED — not that nothing has ever been retired. Warn-only: a kit
+          # may legitimately carry none (e.g. a retired term too short to grep
+          # safely, enforced as a guardrail instead — record that reasoning in
+          # the file). Skipped on the template, whose table holds bracketed
+          # placeholder examples by design.
+          RL="brand/retired-language.md"
+          if [ "$TEMPLATE_MODE" = 0 ] && [ -f "$RL" ]; then
+            rl_rows=$(awk '
+              /<!--/ { inc=1 } /-->/ { inc=0; next } inc { next }
+              /^[[:space:]]*\|/ {
+                line=$0
+                if (line ~ /^[[:space:]]*\|[-| :]+\|?[[:space:]]*$/) next   # separator
+                n=split(line, c, "|"); cell=c[2]
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", cell)
+                if (cell == "Phrase") next                                   # header
+                if (cell == "") next
+                rows++
+              }
+              END { print rows+0 }
+            ' "$RL")
+            if [ "$rl_rows" -eq 0 ]; then
+              echo "::warning::$RL — the retired-phrases table has no rows, so the retired-language CI gate is a no-op. Usually this means retirement decisions are not being captured; if this kit deliberately carries none (e.g. enforcement moved to a guardrail), say so in the file"
+            fi
+          fi
+
           if [ "$FAILS" -gt 0 ]; then
             echo "Kit lint: $FAILS failure(s)."
             exit 1

@@ -34,6 +34,15 @@ duplicate it does not.
 > shape), point at the token set here and treat § "Production palette & type"
 > as a derived excerpt, never a competing source.
 
+> **Working-copy convention:** the client's guidelines file (usually a PPT or
+> PDF) normally lives in the team's SharePoint. Point "Where it lives" at the
+> client's brand-assets **folder**, never at a file — file links break on rename
+> or move, while the folder outlives its contents. Name the current file, its
+> version, and the date received in the State row, so the working copy never
+> claims more currency than it has. The client's own master (their brand team,
+> brand portal, or token set) stays the Canonical-source row: the working copy
+> is a mirror, and a discrepancy escalates to whoever owns the master.
+
 ---
 
 ## Production palette & type

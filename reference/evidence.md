@@ -22,7 +22,8 @@
 
 ## How to use this register
 
-- **Writing content:** cite claims and statistics only from rows with status `usable`, in their exact approved wording. If a claim you want isn't here, flag it — don't improvise one.
+- **Scope — what must be here and what must not.** This register is authoritative for claims about **the client, its sub-brands and partners** (Proof points) and for the recurring third-party research the client's arguments rest on (Citation backbone). A third-party research fact a writer sources fresh for one piece does **not** need a row here — it needs a **named source in the copy** (brand-voice.md § sourcing rules); promote it to a backbone row when it recurs or an argument starts leaning on it. The register's silence on a third-party fact is not a defect; **contradicting a row it does carry always is** — the row wins until it is corrected here, never silently in copy.
+- **Writing content:** cite claims and statistics about the client only from rows with status `usable`, in their exact approved wording. If a claim about the client you want isn't here, flag it — don't improvise one.
 - **External citations:** cite by correct vintage (e.g. "Gartner 2017", not "Gartner"). If a row carries a caveat, the caveat travels with the citation.
 - **Maintaining:** one row per claim. Correcting a claim is an edit to that row plus a CHANGELOG entry, then a reconciliation pass over the documents that cite it.
 

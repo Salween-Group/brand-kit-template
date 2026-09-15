@@ -79,6 +79,7 @@ The base tone above flexes depending on the situation:
 
 ### Sentence & Paragraph Structure
 
+- **Language:** [e.g. "Plain, easily understood British English. Exception: use American spellings for tech terms (e.g. tokenization)."] *Declare the spelling regime explicitly — the words "British English" or "American English" must appear: machine checks (brand-gate's spelling gate) detect the regime from this line, and without it that gate silently skips.*
 - **Sentence length:** [e.g. "Aim for 15–25 words. Vary rhythm — mix short punchy sentences with longer explanatory ones."]
 - **Paragraph length:** [e.g. "3–4 sentences for long-form; 1–2 for social and email."]
 - **Contractions:** [Yes / No / Depends — explain]
@@ -104,6 +105,8 @@ Use the left column. Never use the right column. Every vocabulary ruling lands h
 
 The **Scope / register** column is for rulings that depend on context (a term that's fine internally but not in a hero, a customer-facing phrase with an internal-only sharper variant). Leave it as "All" for unconditional rulings.
 
+Keep the **Not This ✗** cell greppable: write each literal term in quotes or bold, variants separated by " / ". Machine gates (brand-gate, the samples-refresh gate, the guardian pack) extract exactly those literals — a cell that names no literal term is enforced by judgement only.
+
 | Use This ✓                  | Not This ✗                        | Scope / register                                | Reason / ruling                            |
 |-----------------------------|-----------------------------------|--------------------------------------------------|--------------------------------------------|
 | [e.g. "clients"]            | [e.g. "customers"]                | All                                              | [e.g. "Reflects our consultative model"]   |
@@ -114,6 +117,8 @@ The **Scope / register** column is for rulings that depend on context (a term th
 ### Banned Words & Phrases
 
 Words and phrases that must never appear in brand communications — things that were never on-brand.
+
+Lead each entry with the literal term, in quotes or bold, with any qualifier after a dash or in parentheses — machine gates grep exactly that leading term. A judgement rule with no literal term (e.g. "hollow superlatives without a proof point") is legitimate here, but know that it is enforced only by human/model review, never by machine.
 
 - [e.g. "Leverage" (as a verb)]
 - [e.g. "Synergy / synergies"]

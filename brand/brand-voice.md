@@ -79,7 +79,12 @@ The base tone above flexes depending on the situation:
 
 ### Sentence & Paragraph Structure
 
-- **Language:** [e.g. "Plain, easily understood British English. Exception: use American spellings for tech terms (e.g. tokenization)."] *Declare the spelling regime explicitly — the words "British English" or "American English" must appear: machine checks (brand-gate's spelling gate) detect the regime from this line, and without it that gate silently skips.*
+- **Language:** [e.g. "Plain, easily understood British English. Exception: use American spellings for tech terms (e.g. tokenization)."]
+  <!-- Declare the spelling regime explicitly: the filled-in line must carry the
+       literal words "British English" or "American English" (or UK/US spelling).
+       brand-gate's spelling gate detects the regime from this file and silently
+       skips without it. This guidance stays in a comment because visible text
+       naming both regimes would itself be detected. -->
 - **Sentence length:** [e.g. "Aim for 15–25 words. Vary rhythm — mix short punchy sentences with longer explanatory ones."]
 - **Paragraph length:** [e.g. "3–4 sentences for long-form; 1–2 for social and email."]
 - **Contractions:** [Yes / No / Depends — explain]

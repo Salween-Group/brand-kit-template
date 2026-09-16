@@ -29,7 +29,7 @@ Before producing any output, consult the relevant brand files.
 
 **Precedence:** `strategy/positioning.md` is canonical for all strategic content; `strategy/message-house.md` derives from it; `brand-context.md` distils it. If two files disagree, the more upstream file wins — flag the contradiction so the downstream file gets reconciled.
 
-(`brand/CHANGELOG.md` is kit version history for maintainers — you do not need to read it to produce content. `brand/retired-language.md` lists superseded phrases and is enforced by CI; never reuse a phrase from it.)
+(`brand/CHANGELOG.md` is kit version history for maintainers — you do not need to read it to produce content. `brand/retired-language.md` lists superseded phrases and is enforced by CI; never reuse a phrase from it. `reference/eval-cases.md` is a regression answer key for brand-checking tooling — **never use it as a calibration or reference source**: its fail snippets deliberately model violations and must not leak into drafts.)
 
 ## Applying guardrails and holds
 

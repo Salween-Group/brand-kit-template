@@ -16,6 +16,7 @@ Starting template for our client brand kits. Markdown files for use with LLMs an
 | `project-instructions.md` | System prompt tying the guides together | Pasted into project/app instructions or prompts |
 | `reference/evidence.md` | Register of every claim, statistic, and citation — approved wording, source, vintage, status | Cited whenever content uses a claim or statistic |
 | `reference/approved-copy-samples.md` | Full-length examples of approved client copy | Calibrating voice, rhythm, and structure when writing content |
+| `reference/eval-cases.md` | The kit's regression answer key: labelled pass/fail snippets, one per rule the kit enforces | Scored on every voice-guardian pack regeneration and by brand-checking tooling — never loaded for everyday copy |
 
 ### Strategy layer vs operational layer
 
@@ -115,7 +116,12 @@ project chat and crowds out the content.
   condition, a real and plausible Review-by date, and Source; core files must
   carry real `last_updated` (and version) metadata plus a `review_cadence` from
   the freshness vocabulary (and a real `last_reviewed`, when present); and the
-  evidence register must use its declared status vocabulary. History and build products
+  evidence register must use its declared status vocabulary; and every eval case
+  in `reference/eval-cases.md` must be complete (Expected/Tests/Tier/Snippet/Why/
+  Source, with `pass | fail` and `deterministic | judgement` vocabularies) — its
+  Tests pointers ride the same pointer checks as everything else, so a case
+  pointing at a lifted hold or renamed section fails the build until the case is
+  updated with the rule. History and build products
   (`brand/CHANGELOG.md`, the voice-guardian pack) are exempt from the pointer
   check. On this template, placeholder values downgrade to warnings.
 - **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are
@@ -189,7 +195,8 @@ brand-kit-template/
 │   └── CHANGELOG.md
 ├── reference/
 │   ├── evidence.md
-│   └── approved-copy-samples.md
+│   ├── approved-copy-samples.md
+│   └── eval-cases.md
 ├── .github/
 │   ├── clickup-sync.yml   (per-kit ClickUp wiring — empty in the template)
 │   └── workflows/

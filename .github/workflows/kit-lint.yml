@@ -31,6 +31,11 @@ name: Kit lint
 #      so the names are load-bearing; unenforced, a rename that misses one
 #      reference produces no error anywhere, just a pointer that silently
 #      stops resolving.
+#   6. Eval-case blocks are complete. Every `### EC-` case in
+#      reference/eval-cases.md carries Expected (pass | fail), Tests, Tier
+#      (deterministic | judgement), Snippet, Why and Source — consumers parse
+#      these mechanically, and an incomplete case silently drops out of every
+#      regression score. Case Tests pointers are validated by checks 1 and 5.
 #
 # Scope notes: build products, history, and docs are exempt from the pointer
 # checks (CHANGELOG legitimately references deleted holds and quotes section
@@ -205,6 +210,7 @@ jobs:
           need_meta brand/retired-language.md 0
           need_meta reference/evidence.md 0
           need_meta reference/approved-copy-samples.md 0
+          need_meta reference/eval-cases.md 0
           need_meta strategy/positioning.md 0
           need_meta strategy/message-house.md 0
 
@@ -366,7 +372,59 @@ jobs:
 
           rm -f "$HEADINGS_FILE"
 
-          # ---------- 6. Empty retired-language table (warn only) ----------
+          # ---------- 6. Eval-case block completeness ----------
+
+          # reference/eval-cases.md is the kit's regression answer key: consumers
+          # (pack regeneration scoring, brand-checking engines) parse each case's
+          # fields mechanically, so a case missing its verdict or carrying a value
+          # outside the vocabulary silently drops out of every score. Same contract
+          # as check 2: every `### EC-` block must be complete. The rule POINTERS
+          # inside cases need no check of their own — the Tests field uses the
+          # kit's standard pointer forms, which checks 1 and 5 already validate.
+          EC="reference/eval-cases.md"
+          if [ -f "$EC" ]; then
+            while IFS='|' read -r kind heading detail; do
+              case "$kind" in
+                ECMISS) fail "$EC — case \"$heading\" is missing required field(s): $detail" ;;
+                ECEXP)  fail "$EC — case \"$heading\" has Expected \"$detail\", not in the vocabulary (pass | fail)" ;;
+                ECTIER) fail "$EC — case \"$heading\" has Tier \"$detail\", not in the vocabulary (deterministic | judgement)" ;;
+              esac
+            done < <(awk '
+              function trim(x) { gsub(/^[[:space:]`]+|[[:space:]`]+$/, "", x); return x }
+              function flush() {
+                if (h == "") return
+                miss = ""
+                if (!("Expected" in s)) miss = miss "Expected, "
+                if (!("Tests" in s))    miss = miss "Tests, "
+                if (!("Tier" in s))     miss = miss "Tier, "
+                if (!("Snippet" in s))  miss = miss "Snippet, "
+                if (!("Why" in s))      miss = miss "Why, "
+                if (!("Source" in s))   miss = miss "Source, "
+                if (miss != "") { sub(/, $/, "", miss); printf "ECMISS|%s|%s\n", h, miss }
+              }
+              /<!--/ { inc=1 } /-->/ { inc=0; next } inc { next }
+              /^### EC-/ { flush(); h=$0; sub(/^### +/, "", h); delete s; next }
+              /^### /    { flush(); h="" }
+              /^## /     { flush(); h="" }
+              h != "" && /^- \*\*Expected:\*\*/ {
+                s["Expected"]=1
+                v=$0; sub(/^- \*\*Expected:\*\*[[:space:]]*/, "", v); v=trim(v)
+                if (v != "pass" && v != "fail") printf "ECEXP|%s|%s\n", h, v
+              }
+              h != "" && /^- \*\*Tier:\*\*/ {
+                s["Tier"]=1
+                v=$0; sub(/^- \*\*Tier:\*\*[[:space:]]*/, "", v); v=trim(v)
+                if (v != "deterministic" && v != "judgement") printf "ECTIER|%s|%s\n", h, v
+              }
+              h != "" && /^- \*\*Tests:\*\*/   { s["Tests"]=1 }
+              h != "" && /^- \*\*Snippet:\*\*/ { s["Snippet"]=1 }
+              h != "" && /^- \*\*Why:\*\*/     { s["Why"]=1 }
+              h != "" && /^- \*\*Source:\*\*/  { s["Source"]=1 }
+              END { flush() }
+            ' "$EC")
+          fi
+
+          # ---------- 7. Empty retired-language table (warn only) ----------
 
           # An empty retired-phrases table makes the retired-language CI gate a
           # no-op, and it usually means retirement decisions are not being

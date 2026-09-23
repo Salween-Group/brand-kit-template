@@ -1,0 +1,236 @@
+name: Sync version reconcile
+
+# Settles version headers after a sync PR merges. The brand-sync skills
+# (brand-sync, brand-sync-manual, brand-sync-clickup) deliberately never bump
+# version headers on their branches: every recommendation is a droppable
+# commit, so the version is only known once the account team has chosen what
+# to merge. That left a manual follow-up PR after every accepted sync, which
+# raced the pack-stale sweep and collided with its CHANGELOG edits.
+#
+# On merge of a PR whose head branch starts with "brand-sync", this workflow:
+#
+#   * bumps the minor `version:` (1.7 -> 1.8) of every kit file the PR
+#     actually changed, unless the PR already moved that file's version;
+#   * sets `last_updated:` on those files to the merge date (Asia/Singapore);
+#   * rewrites the heading of the CHANGELOG entry the PR added so it records
+#     the merge and the real bumps, e.g.
+#       ### v1.8 — brand-sync from calls ... (merged 2026-09-23, PR #43; brand-context → v1.8)
+#     A "(proposed ...)" parenthetical on that heading is replaced; otherwise
+#     the merge note is appended.
+#
+# Only the header fields inside each file's leading <!-- ... --> block are
+# touched. Files with a non-numeric version (e.g. "NOT YET BUILT") keep it.
+# The voice-guardian pack and the CHANGELOG body are never edited.
+#
+# The commit is pushed straight to main as github-actions[bot]. Commits made
+# with GITHUB_TOKEN do not start other workflows, so pack-stale-on-main does
+# not re-run on it; that is fine, because the sync merge itself already
+# raised the pack-stale signal and the regeneration builds from main HEAD.
+# Idempotent: re-running against an already-reconciled main changes nothing.
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Number of an already-merged brand-sync PR to reconcile"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: read
+
+concurrency:
+  group: sync-version-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       startsWith(github.event.pull_request.head.ref, 'brand-sync'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Resolve the merged PR
+        id: pr
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          set -euo pipefail
+          info=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json number,state,headRefName,baseRefOid,headRefOid,mergedAt)
+          state=$(jq -r .state <<<"$info")
+          head_ref=$(jq -r .headRefName <<<"$info")
+          if [ "$state" != "MERGED" ]; then
+            echo "PR #$PR_NUMBER is $state, not merged — nothing to reconcile."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          case "$head_ref" in
+            brand-sync*) ;;
+            *)
+              echo "PR #$PR_NUMBER head '$head_ref' is not a brand-sync branch — skipped."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+          merged_at=$(jq -r .mergedAt <<<"$info")
+          {
+            echo "skip=false"
+            echo "number=$PR_NUMBER"
+            echo "base=$(jq -r .baseRefOid <<<"$info")"
+            echo "head=$(jq -r .headRefOid <<<"$info")"
+            echo "date=$(TZ=Asia/Singapore date -d "$merged_at" +%F)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Bump headers and settle the CHANGELOG heading
+        if: steps.pr.outputs.skip == 'false'
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          BASE_SHA: ${{ steps.pr.outputs.base }}
+          HEAD_SHA: ${{ steps.pr.outputs.head }}
+          MERGE_DATE: ${{ steps.pr.outputs.date }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, re, subprocess, sys
+
+          pr = os.environ["PR_NUMBER"]
+          base = os.environ["BASE_SHA"]
+          head = os.environ["HEAD_SHA"]
+          date = os.environ["MERGE_DATE"]
+          CHANGELOG = "brand/CHANGELOG.md"
+          EXCLUDE = {CHANGELOG, "reference/voice-guardian-pack.md"}
+
+          def git(*args):
+              return subprocess.run(["git", *args], check=True,
+                                    capture_output=True, text=True, encoding="utf-8").stdout
+
+          def show(rev, path):
+              r = subprocess.run(["git", "show", f"{rev}:{path}"],
+                                 capture_output=True, text=True, encoding="utf-8")
+              return r.stdout if r.returncode == 0 else None
+
+          VERSION = re.compile(r"^(\s*version:\s+)(\d+)\.(\d+)(\s*)$", re.M)
+          UPDATED = re.compile(r"^(\s*last_updated:\s+)(\d{4}-\d{2}-\d{2})", re.M)
+
+          def header(text):
+              # Only the leading metadata comment is in play.
+              m = re.search(r"<!--.*?-->", text, re.S)
+              return (m.start(), m.end()) if m else None
+
+          def header_version(text):
+              if text is None:
+                  return None
+              span = header(text)
+              if not span:
+                  return None
+              m = VERSION.search(text, span[0], span[1])
+              return f"{m.group(2)}.{m.group(3)}" if m else None
+
+          mb = git("merge-base", base, head).strip()
+          changed = [p for p in git("diff", "--name-only", f"{mb}...{head}").split()
+                     if re.match(r"(brand|reference|strategy)/[^/]+\.md$", p)
+                     and p not in EXCLUDE]
+
+          bumps, touched = [], []
+          for path in changed:
+              if not os.path.exists(path):
+                  continue
+              text = open(path, encoding="utf-8").read()
+              span = header(text)
+              if not span:
+                  print(f"{path}: no metadata header — skipped")
+                  continue
+              s, e = span
+              block = text[s:e]
+              new = block
+
+              before, after = header_version(show(mb, path)), header_version(show(head, path))
+              m = VERSION.search(new)
+              if m and before is not None and before == after:
+                  major, minor = int(m.group(2)), int(m.group(3))
+                  current = f"{major}.{minor}"
+                  if current == after:
+                      nv = f"{major}.{minor + 1}"
+                      new = new[:m.start()] + f"{m.group(1)}{nv}{m.group(4)}" + new[m.end():]
+                      bumps.append(f"{path.split('/')[-1].removesuffix('.md')} → v{nv}")
+                  else:
+                      print(f"{path}: version already moved on main ({after} → {current}) — left alone")
+              elif m:
+                  print(f"{path}: PR already changed version ({before} → {after}) — left alone")
+
+              new = UPDATED.sub(lambda u: u.group(1) + date, new, count=1)
+              if new != block:
+                  open(path, "w", encoding="utf-8", newline="\n").write(text[:s] + new + text[e:])
+                  touched.append(path)
+
+          # The CHANGELOG entry this PR added: first "### " heading present on
+          # the PR head but not at the merge base.
+          # A PR that only edits an existing heading adds no entry, so the
+          # heading count must grow for anything to count as added.
+          base_heads = re.findall(r"^### .*$", show(mb, CHANGELOG) or "", re.M)
+          head_heads = re.findall(r"^### .*$", show(head, CHANGELOG) or "", re.M)
+          added = ([h for h in head_heads if h not in set(base_heads)]
+                   if len(head_heads) > len(base_heads) else [])
+          log_now = open(CHANGELOG, encoding="utf-8").read() if os.path.exists(CHANGELOG) else ""
+          merged_re = re.compile(rf"^### .*\bmerged\b[^\n]*PR #{pr}\b", re.M)
+          if added and log_now:
+              target = added[0]
+              note = f"merged {date}, PR #{pr}" + (f"; {', '.join(bumps)}" if bumps else "")
+              if merged_re.search(log_now):
+                  print("CHANGELOG heading already records the merge — left alone")
+              else:
+                  if re.search(r"\(proposed[^)]*\)\s*$", target):
+                      settled = re.sub(r"\(proposed[^)]*\)\s*$", f"({note})", target)
+                  else:
+                      settled = f"{target} ({note})"
+                  log = open(CHANGELOG, encoding="utf-8").read()
+                  if log.count(target) == 1:
+                      log = log.replace(target, settled)
+                      open(CHANGELOG, "w", encoding="utf-8", newline="\n").write(log)
+                      touched.append(CHANGELOG)
+                  else:
+                      print(f"::warning::CHANGELOG heading not found exactly once on main: {target}")
+          else:
+              print("::warning::PR added no CHANGELOG entry heading — heading left alone")
+
+          print("Bumps:", ", ".join(bumps) or "none")
+          print("Touched:", ", ".join(touched) or "none")
+          PY
+
+      - name: Commit to main
+        if: steps.pr.outputs.skip == 'false'
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "Headers already reconciled — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: reconcile version headers after PR #${PR_NUMBER} merge" \
+            -m "Automated by .github/workflows/sync-version-reconcile.yml."
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main."
+            git pull --rebase origin main
+          done
+          echo "::error::Could not push the reconcile commit after 3 attempts."
+          exit 1

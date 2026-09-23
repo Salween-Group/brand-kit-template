@@ -124,6 +124,17 @@ project chat and crowds out the content.
   updated with the rule. History and build products
   (`brand/CHANGELOG.md`, the voice-guardian pack) are exempt from the pointer
   check. On this template, placeholder values downgrade to warnings.
+- **Version headers settle themselves after a sync.** The brand-sync skills never bump
+  `version:` or `last_updated:` on their branches — each recommendation is a droppable
+  commit, so a file's next version is only known once review decides what merges. When a
+  PR from a `brand-sync*` branch merges, `.github/workflows/sync-version-reconcile.yml`
+  bumps the minor version of each file the merge actually changed (a file whose commit
+  was dropped keeps its version), sets `last_updated` to the merge date, and rewrites the
+  new `brand/CHANGELOG.md` entry's `(proposed …)` heading to record the merge and the
+  real bumps — committed straight to main in seconds, so a voice-guardian pack
+  regeneration triggered by the same merge always builds from the settled headers. It
+  is idempotent and can be re-run by hand for a given PR; on this template it has
+  nothing to act on.
 - **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are
   ops-facing and stay in GitHub, but holds past review-by are the account team's to
   triage, and account teams live in ClickUp, not GitHub notifications. So
@@ -206,7 +217,8 @@ brand-kit-template/
 │       ├── holds-expiry-check.yml
 │       ├── pack-freshness-check.yml
 │       ├── pack-stale-on-main.yml
-│       └── clickup-issue-sync.yml
+│       ├── clickup-issue-sync.yml
+│       └── sync-version-reconcile.yml
 ├── docs/
 │   └── voice-guardian-pack.md
 ├── project-instructions.md

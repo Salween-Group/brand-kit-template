@@ -4,7 +4,7 @@ name: Voice guardian pack freshness
 # generated build product compiled from the kit's voice-relevant files by the
 # voice-guardian-pack skill. This check fails a PR that changes any of those
 # source files without regenerating the pack — a stale pack silently enforces
-# last month's rules in whatever custom GPT or skill it was deployed to.
+# last month's rules wherever it is deployed.
 #
 # Skipped entirely on kits that have no pack yet. The check is deliberately
 # diff-based (did the pack move when its sources moved), not content-based —

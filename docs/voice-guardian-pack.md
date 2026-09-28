@@ -18,9 +18,9 @@ confidently enforcing last month's vocabulary.
 
 The voice-guardian pack is **one shareable markdown file** —
 `reference/voice-guardian-pack.md` — that compiles everything a "brand voice guardian"
-assistant needs to review and rewrite copy against the brand: role and behaviour, hard
-rules, vocabulary, voice and tone, calibration examples, the usable-claims register, a
-holds snapshot, and escalation rules.
+assistant needs to know about one client's brand to review and rewrite copy against it:
+client scope, hard rules, vocabulary, voice and tone, calibration examples, the
+usable-claims register, a holds snapshot, and escalation rules.
 
 The design principle is the same one this kit applies to its branded document
 deliverables: **the markdown sources are the truth; the pack is a build product.** It is

@@ -87,7 +87,7 @@ jobs:
               echo ""
               echo "**Fix:** run the **voice-guardian-pack** skill (2.0.0+ is repo-first — run it from anywhere; it clones this kit fresh, regenerates from \`origin/main\`, and opens the regeneration PR). Merging that PR closes this issue automatically on the next push to \`main\`."
               echo ""
-              echo "Deployed copies of the pack (custom GPT knowledge file, skill reference) stay stale until the regenerated file is re-uploaded — verify via the pack's §0 stamp (date + source commit)."
+              echo "Deployed copies follow the merged pack: a synced mirror updates on its next sync; a hand-uploaded copy stays stale until it is re-uploaded. Verify any deployed copy via the pack's §0 stamp (date + source commit)."
               echo ""
               echo "_Opened automatically by \`.github/workflows/pack-stale-on-main.yml\`._"
             } > "$body_file"
@@ -101,7 +101,7 @@ jobs:
 
           if [ -n "$open_issue" ]; then
             gh issue close "$open_issue" --repo "$REPO" --comment \
-              "The pack caught up in \`$(git rev-parse --short=12 HEAD)\` — no voice-source commits after the pack's last update. Closing automatically. Deployed copies still need the re-upload: verify via the pack's §0 stamp."
+              "The pack caught up in \`$(git rev-parse --short=12 HEAD)\` — no voice-source commits after the pack's last update. Closing automatically. A synced mirror picks this up on its next sync; a hand-uploaded copy still needs re-uploading. Verify any deployed copy via the pack's §0 stamp."
             echo "Fresh — closed signal issue #$open_issue."
           else
             echo "Pack fresh — nothing to do."

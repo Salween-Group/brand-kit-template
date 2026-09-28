@@ -41,13 +41,13 @@ Three properties follow from treating it as a build:
 ## Anatomy: nine sections, in a deliberate order
 
 LLMs weight early instructions more heavily, and context truncation eats from the
-bottom. So the pack front-loads behaviour and rules, and puts narrative where it can
+bottom. So the pack front-loads scope and rules, and puts narrative where it can
 afford to be lost:
 
 | § | Section | What it carries |
 |---|---|---|
 | 0 | About this file | Generated date, source commit, per-source version stamp, the build-product statement, the staleness rule |
-| 1 | Role and behaviour | Review → violations with the rule cited → rewrite; never invent claims; strategy-level copy is flagged, never silently fixed; holds and retired phrases are never overruled |
+| 1 | Client scope | Which client the rules cover and what it is, that they apply to that client's copy only, and the non-negotiables: never invent claims; strategy-level copy is flagged, never silently fixed; holds and retired phrases are never overruled |
 | 2 | The brand in one page | One-liner, boilerplate (verbatim), house view, positioning sentence, core claims, audiences, locked hero |
 | 3 | Hard rules | The durable guardrails as never/always statements |
 | 4 | Vocabulary | Preferred-terms table, register rules, approved language bank, banned words, retired phrases **verbatim** |
@@ -62,6 +62,20 @@ per token** — if the pack must shrink, cut the §2 brand narrative before touc
 single example pair. Second, compression never applies to rules: locked copy and
 guardrails travel verbatim or near-verbatim; only explanatory prose gets compressed.
 Never drop a rule to save space, and never add one the kit doesn't contain.
+
+**The pack carries brand rules, never assistant behaviour.** How to review, what a
+review looks like, and any workflow steps belong to the assistant's own instructions,
+written once for every client. Behaviour repeated in every pack drifts from those
+instructions and, worse, contradicts them, and a reviewer told that "the kit is the
+authority" then has two authorities.
+
+**The headings are a contract.** The ten `## N. Heading` lines are identical in every
+pack, number and text, verbatim and in order, because the assistant finds sections by
+them from outside the repository, where no kit check can see a moved section. This is
+the one place the kit's names-not-numbers convention doesn't apply: that convention
+protects hand-written files a kit can insert sections into, and a generated pack has
+one fixed layout. The contract is checked before every publish; a pack whose headings
+differ is not published.
 
 The pack also teaches its own reader to distrust it: §0 carries a **30-day staleness
 rule** — past that, the guardian treats the holds snapshot as unverified and caveats
@@ -147,32 +161,38 @@ retired-language grep — alongside `brand/retired-language.md` itself and the c
 
 ## Deployment, and the last mile
 
-The pack deploys three ways:
+The pack deploys two ways:
 
-- **Custom GPT:** §1 (role) and §3 (hard rules) go into the instructions field, where
-  they can't be truncated away; the full pack becomes the knowledge file.
-- **Assistant skill:** §1 becomes the skill's instruction body; the full pack rides
-  along as a reference file.
-- **Synced mirror:** the pack is mirrored into a file the assistant platform itself owns
-  — for us, a "Brand Kit" file in each client's ClickUp folder, read by that client's
-  brand-voice-guardian agent. A scheduled job diffs that mirror against the repository
-  copy daily, updates it when the repository has moved, and reports on success as well
-  as failure, so a sync that stops is visible rather than silent.
+- **Synced mirror:** the pack is mirrored into a document the assistant platform itself
+  owns. For us, that is a "Brand Kit" doc in each client's ClickUp folder, read by one
+  brand-guardian agent that serves every client: the agent's instructions define how to
+  review, and each client's doc defines that client's brand. A scheduled job overwrites
+  each doc with an exact copy of the repository's pack, reads it back to verify, and
+  raises an issue on any failure, so a sync that stops or drifts is visible rather than
+  silent.
+- **Hand-uploaded copy:** a hosted GPT knowledge file, an assistant skill's reference
+  file, or a copy the client keeps themselves. The assistant's behaviour lives in its own
+  instructions field or skill body, not in the pack.
+
+**A mirror must be a copy, not a rewrite.** Our first mirror was an agent that updated
+each doc from the repository, and it paraphrased as it went: it dropped sentences,
+merged two versions of one pack, and reintroduced a word the client had banned. Nothing
+upstream could see it, because every upstream check reads the repository, not the doc.
+Copying a file is a mechanical job; it should be done by code, overwrite the whole
+document, and prove the result matches.
 
 Whether the last mile can be automated depends on which of those you are in, and it is
 worth being precise about it rather than assuming the worst case. A mirror the platform
-can write to closes the loop: a regeneration reaches the deployed assistant within a day
-and nobody has to remember. A hosted GPT or skill whose knowledge file is uploaded by
-hand does not, and neither does a copy the client keeps themselves — those stay human
-steps, every time, and the handoff message for every regeneration says so: *the
-previously deployed copy is now stale until re-uploaded.*
+can write to closes the loop: a regeneration reaches the deployed assistant within the
+hour and nobody has to remember. A hand-uploaded copy does not, and neither does a copy
+the client keeps themselves — those stay human steps, every time, and the handoff
+message for every regeneration says so: *the previously deployed copy is now stale
+until re-uploaded.*
 
 The §0 stamp is what makes either case checkable: date plus source commit is how anyone,
 including the client, verifies that a deployed copy is current — without having to trust
-that a sync ran. It also makes two things legible that would otherwise read as faults. A
-daily sync means a deployed copy can sit a day behind `main` and still be healthy. And a
-mirror is a mirror: the repository remains the source of truth, so a rule edited in the
-deployed copy is a divergence to reconcile, not a change.
+that a sync ran. And a mirror is a mirror: the repository remains the source of truth,
+so a rule edited in the deployed copy is overwritten on the next sync, not kept.
 
 ## Why this shape
 

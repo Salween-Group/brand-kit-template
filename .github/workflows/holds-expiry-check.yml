@@ -33,6 +33,20 @@ name: Live-holds expiry check
 # be accurate. Metadata blocks are excluded from the comparison, so filling in
 # a date or bumping a version never counts as content.
 #
+# A third job checks the approved copy samples against the kit's CURRENT
+# banned-words list. The samples are the voice's calibration set, and a rule
+# added after a sample was approved leaves an off-brand sample teaching the
+# old behaviour until the next quarterly refresh. The date-based cadence job
+# can't see that, so this job opens its own self-closing issue when a sample
+# uses a banned term. Terms are read by the same contract brand-gate uses:
+# each banned bullet leads with its literal term, quoted or bolded, with
+# slash or "or" variants. A hit is a prompt to review, not a verdict: a
+# human decides whether the sample should be retired, trimmed or kept.
+#
+# LINE ENDINGS: every parser here strips carriage returns first. A kit file
+# committed with CRLF endings otherwise leaves a trailing \r on each value,
+# the date parser rejects it, and the file used to be skipped silently.
+#
 # NOTE: the workflow name "Live-holds expiry check" is load-bearing — the
 # ClickUp issue sync's reconcile pass chains on it by exact name via
 # workflow_run (see clickup-issue-sync.yml). Renaming this workflow silently
@@ -97,7 +111,7 @@ jobs:
                 if (d < today) printf "| %s | %s |\n", heading, d
               }
             }
-          ' "$FILE")
+          ' < <(tr -d '\r' < "$FILE"))
 
           if [ -z "$expired" ]; then
             echo "No holds past review-by."
@@ -195,9 +209,9 @@ jobs:
           # so a real last_updated or a version bump never reads as content.
           body_of() {
             if grep -q '^-->' "$1"; then
-              sed -n '/^-->/,$p' "$1" | tail -n +2
+              tr -d '\r' < "$1" | sed -n '/^-->/,$p' | tail -n +2
             else
-              cat "$1"
+              tr -d '\r' < "$1"
             fi
           }
 
@@ -229,7 +243,7 @@ jobs:
           stale=""
           scaffold=""
           while IFS= read -r f; do
-            meta=$(head -40 "$f")
+            meta=$(head -40 "$f" | tr -d '\r')
             cad=$(printf '%s\n' "$meta" | sed -n 's/^[[:space:]]*review_cadence:[[:space:]]*//p' | head -1 | awk '{print $1}')
             if [ -z "$cad" ]; then continue; fi
 
@@ -258,7 +272,11 @@ jobs:
             eff=""; basis=""
             if [ -n "$lr" ]; then eff=$(epoch_of "$lr"); basis="last_reviewed $lr"; fi
             if [ -z "$eff" ] && [ -n "$lu" ]; then eff=$(epoch_of "$lu"); basis="last_updated $lu"; fi
-            if [ -z "$eff" ]; then continue; fi   # invalid dates are kit lint's to fail
+            if [ -z "$eff" ]; then
+              # Kit lint fails invalid dates on PRs; say so here too, never skip silently.
+              echo "::warning::$f — no readable last_reviewed or last_updated date; cadence not checked."
+              continue
+            fi
 
             age=$(( (NOW - eff) / 86400 ))
             if [ "$age" -gt "$days" ]; then
@@ -359,6 +377,182 @@ jobs:
           # Sample and file staleness is the account team's to action, so this
           # issue carries the `clickup` label — the opt-in marker the ClickUp
           # issue sync mirrors from (see clickup-issue-sync.yml).
+          gh label create clickup \
+            --description "Mirror this issue to the account team's ClickUp list" \
+            --color 7057ff --force >/dev/null 2>&1 || true
+
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --body "$body" --add-label clickup >/dev/null
+            echo "Updated issue #$existing."
+          else
+            gh issue create --title "$TITLE" --body "$body" --label clickup
+          fi
+
+  samples:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan approved samples for current banned words
+        id: scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ]; then
+            echo "Template repository — samples check skipped."
+            echo "hits=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 - <<'PY'
+          import os, re
+
+          VOICE = "brand/brand-voice.md"
+          SAMPLES = "reference/approved-copy-samples.md"
+          QUOTES = "\"'“”‘’"
+
+
+          def read(path):
+              with open(path, encoding="utf-8-sig") as fh:
+                  return fh.read().replace("\r", "")
+
+
+          def out(value):
+              with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+                  fh.write("hits<<SCAN_EOF\n" + value + "\nSCAN_EOF\n")
+
+
+          if not (os.path.exists(VOICE) and os.path.exists(SAMPLES)):
+              print("No brand-voice.md or approved-copy-samples.md - check skipped.")
+              out("")
+              raise SystemExit
+
+
+          def strip_comments(text):
+              return re.sub(r"<!--.*?-->", "", text, flags=re.S)
+
+
+          voice = strip_comments(read(VOICE))
+          m = re.search(r"^###\s+Banned Words[^\n]*\n(.*?)(?=^#{2,3}\s)", voice + "\n## end", re.M | re.S | re.I)
+          section = m.group(1) if m else ""
+
+          # The leading term run of each TOP-LEVEL bullet: "quoted" or **bolded** terms
+          # at the start, joined only by slash / or / and / commas. A bullet with no
+          # marked term falls back to its bare fragment before the first dash, bracket,
+          # comma or colon (some kits write "- Leverage"). Indented sub-bullets list
+          # replacements, never banned terms, so they are skipped, as are the
+          # template's placeholder bullets ("[e.g. ...]").
+          MARKED = r'(?:\*\*[^*]+\*\*|"[^"]+"|“[^”]+”)'
+          terms = set()
+          for line in section.splitlines():
+              b = re.match(r"^[-*]\s+(.*)", line)
+              if not b or b.group(1).lstrip().startswith("[e.g"):
+                  continue
+              body = b.group(1)
+              run = re.match(r"^(" + MARKED + r"(?:\s*(?:/|,|\bor\b|\band\b)\s*" + MARKED + r")*)", body)
+              if run:
+                  for lit in re.findall(r'\*\*([^*]+)\*\*|"([^"]+)"|“([^”]+)”', run.group(1)):
+                      lit = next(x for x in lit if x)
+                      for t in re.split(r"\s*/\s*", lit.strip()):
+                          t = t.strip(" .,:;" + QUOTES)
+                          if 2 < len(t) <= 40 and len(t.split()) <= 5:
+                              terms.add(t)
+                  continue
+              frag = re.split(r"\s+[—–]\s+|\s+-\s+|\s*\(|,|:", body)[0].strip()
+              if "*" not in frag and 2 < len(frag) <= 40 and len(frag.split()) <= 4:
+                  for t in re.split(r"\s*/\s*", frag):
+                      t = t.strip(" .;" + QUOTES)
+                      if len(t) > 2:
+                          terms.add(t)
+
+
+          def pattern(term):
+              # Literal term, flexible space/hyphen between words, simple inflections.
+              words = term.split()
+              last = words[-1]
+              if re.fullmatch(r"[A-Za-z]+", last):
+                  if last.lower().endswith("e"):
+                      tail = re.escape(last[:-1]) + r"(?:e|es|ed|er|ers|ing)"
+                  else:
+                      tail = re.escape(last) + r"(?:s|es|ed|ing)?"
+                  head = [re.escape(w) for w in words[:-1]]
+                  body = r"[\s-]+".join(head + [tail])
+              else:
+                  body = r"[\s-]+".join(re.escape(w) for w in words)
+              return re.compile(r"(?<![\w-])" + body + r"(?![\w-])", re.I)
+
+
+          samples = strip_comments(read(SAMPLES))
+          heading = "(top of file)"
+          rows = []
+          for n, line in enumerate(samples.splitlines(), 1):
+              h = re.match(r"^#{2,4}\s+(.*)", line)
+              if h:
+                  heading = h.group(1).strip()
+                  continue
+              # Sample text is blockquoted by the template's convention; context lines,
+              # editor's notes and the file's own guidance are not copy, so skip them.
+              if not line.lstrip().startswith(">") or "Purpose:" in line or "Maintenance:" in line:
+                  continue
+              for t in sorted(terms):
+                  for hit in pattern(t).finditer(line):
+                      # A term inside quotation marks is being mentioned (an editor's
+                      # note warning against it), not used.
+                      before = line[hit.start() - 1:hit.start()] if hit.start() else ""
+                      after = line[hit.end():hit.end() + 1]
+                      if before and after and before in QUOTES and after in QUOTES:
+                          continue
+                      a, z = max(0, hit.start() - 50), min(len(line), hit.end() + 50)
+                      ctx = line[a:z].replace("|", "\\|").strip()
+                      rows.append("| %s | %d | %s | ...%s... |" % (heading.replace("|", "\\|")[:70], n, t, ctx))
+          print("Banned terms loaded: %d" % len(terms))
+          if rows:
+              print("Samples using banned terms:")
+              print("\n".join(rows))
+          else:
+              print("No approved sample uses a current banned term.")
+          out("\n".join(rows))
+          PY
+
+      - name: Create, update, or close the tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HITS: ${{ steps.scan.outputs.hits }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TITLE="Approved samples use banned words"
+
+          existing=$(gh issue list --state open --json number,title \
+            --search "\"$TITLE\" in:title" \
+            --jq ".[] | select(.title == \"$TITLE\") | .number" | head -1)
+
+          if [ -z "${HITS//[[:space:]]/}" ]; then
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" \
+                --comment "No approved sample uses a current banned term - closing automatically."
+              echo "Closed issue #$existing."
+            else
+              echo "No hits and no open issue - nothing to do."
+            fi
+            exit 0
+          fi
+
+          body=$(cat <<BODY
+          The daily samples check found approved copy samples that use a term on the kit's **current** banned-words list (checked $(date -u +%F), UTC). A sample approved before the rule existed now teaches the old behaviour to anyone calibrating against it.
+
+          | Sample (nearest heading) | Line | Banned term | Context |
+          |---|---|---|---|
+          $HITS
+
+          A hit is a prompt to review, not a verdict: the match is literal and includes simple inflections, so check each one in context. For each sample, retire it, trim the excerpt, or keep it with a note, then record the change in \`reference/approved-copy-samples.md\`. A samples refresh (\`brand-kit-samples-refresh\`) handles this as part of its run.
+
+          This issue is maintained by \`.github/workflows/holds-expiry-check.yml\` (samples job): it is updated on every run and closes itself once no sample uses a banned term.
+          BODY
+          )
+
+          # The samples are the account team's to action, so this issue is
+          # mirrored to ClickUp like the other two (see clickup-issue-sync.yml).
           gh label create clickup \
             --description "Mirror this issue to the account team's ClickUp list" \
             --color 7057ff --force >/dev/null 2>&1 || true

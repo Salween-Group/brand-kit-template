@@ -16,11 +16,12 @@ confidently enforcing last month's vocabulary.
 
 ## The answer: a compiled build product
 
-The voice-guardian pack is **one shareable markdown file** —
+The voice-guardian pack is **one markdown file** —
 `reference/voice-guardian-pack.md` — that compiles everything a "brand voice guardian"
 assistant needs to know about one client's brand to review and rewrite copy against it:
-client scope, hard rules, vocabulary, voice and tone, calibration examples, the
-usable-claims register, a holds snapshot, and escalation rules.
+client scope, the brand narrative with its audiences and competitive landscape, hard
+rules, vocabulary, voice and tone, calibration examples and approved published copy,
+the usable-claims register, a holds snapshot, and escalation rules.
 
 The design principle is the same one this kit applies to its branded document
 deliverables: **the markdown sources are the truth; the pack is a build product.** It is
@@ -34,11 +35,15 @@ Three properties follow from treating it as a build:
   was built from. `git log <stamped-sha>..main -- <the voice source files>` lists
   precisely what has changed since; an empty list means the pack is current.
 - **Regeneration is incremental.** Diff the sources since the stamp, update only the
-  affected sections plus the stamp itself. Small diffs keep the review meaningful.
+  affected sections, and rewrite the stamp. Small diffs keep the review meaningful.
+- **The pack carries no history of itself.** What changed between versions belongs in
+  the kit's changelog and the regeneration PR, not in the pack. The assistant reads
+  every line of the pack on every review, so a growing log of past regenerations is
+  pure cost to it.
 - **CI can enforce that regeneration happened** without needing to judge its content
   (see "Enforcement" below).
 
-## Anatomy: nine sections, in a deliberate order
+## Anatomy: ten sections, in a deliberate order
 
 LLMs weight early instructions more heavily, and context truncation eats from the
 bottom. So the pack front-loads scope and rules, and puts narrative where it can
@@ -46,22 +51,41 @@ afford to be lost:
 
 | § | Section | What it carries |
 |---|---|---|
-| 0 | About this file | Generated date, source commit, per-source version stamp, the build-product statement, the staleness rule |
+| 0 | About this file | Generated date, source commit, per-source version stamp, a link to the kit's repository and to the exact commit, the build-product statement, the staleness rule. Nothing else: no change notes |
 | 1 | Client scope | Which client the rules cover and what it is, that they apply to that client's copy only, and the non-negotiables: never invent claims; strategy-level copy is flagged, never silently fixed; holds and retired phrases are never overruled |
-| 2 | The brand in one page | One-liner, boilerplate (verbatim), house view, positioning sentence, core claims, audiences, locked hero |
+| 2 | The brand in one page | One-liner, boilerplate (verbatim), house view, positioning sentence, core claims, differentiators, content framework and key messages, locked hero; then every audience and ICP segment in full, and the competitive landscape |
 | 3 | Hard rules | The durable guardrails as never/always statements |
 | 4 | Vocabulary | Preferred-terms table, register rules, approved language bank, banned words, retired phrases **verbatim** |
-| 5 | Voice and tone | Personality in practice, tone spectrum and shifts, writing style rules, POV |
-| 6 | This, not that | Every calibration pair, compressed to off-brand / on-brand / why |
+| 5 | Voice and tone | Personality in practice, tone spectrum and shifts, writing style rules, POV, and the copy conventions from the visual guide (heading case, caption and label capitalisation, text layout in documents) |
+| 6 | This, not that | Every calibration pair, compressed to off-brand / on-brand / why; then real approved copy, quoted verbatim, a few samples per format |
 | 7 | Claims the copy may state | The approved claims in approved wording — and the closing rule that an unlisted claim does not exist |
 | 8 | Live holds snapshot | Active holds as "flag, don't decide" items, or an explicit "none active as of [date]" |
 | 9 | Escalation | When the guardian stops and hands off to a human |
 
 Two ordering rules matter more than the rest. First, **§6 is the highest-value section
-per token** — if the pack must shrink, cut the §2 brand narrative before touching a
-single example pair. Second, compression never applies to rules: locked copy and
-guardrails travel verbatim or near-verbatim; only explanatory prose gets compressed.
-Never drop a rule to save space, and never add one the kit doesn't contain.
+per token** — if the pack must shrink, cut the §2 brand narrative prose before touching
+a single example pair, and never cut the audience or competitor detail. Second,
+compression never applies to substance: rules, locked copy, audience and competitor
+detail, and approved samples travel verbatim or near-verbatim; only explanatory prose
+and repetition get compressed. Never drop a rule to save space, and never add one the
+kit doesn't contain.
+
+**Completeness beats brevity.** The pack is the assistant's only view of the kit. Our
+first packs were built compact, for hosted knowledge files with tight limits, and came
+out at a fifth to a third of their kit's size: audiences cut to a line, competitors
+stripped, approved samples reduced to fragments or described instead of quoted. A
+reviewer working from that can judge a sentence, but not whether the copy speaks to the
+right buyer or claims ground a competitor already owns. Real published copy matters for
+the same reason: invented example pairs teach sentences, while real copy teaches rhythm,
+structure, and how far a piece travels before it names a service. Samples are capped
+per format so the section stays readable.
+
+**And §0 stays small.** Left unchecked, each regeneration appended a paragraph to §0
+explaining what it changed. Within a few weeks §0 was the largest section in one pack,
+bigger than the claims register and the holds snapshot put together, and those notes
+were exactly where personal names slipped past the filter. §0 is now rewritten whole on
+every build, and the build fails if it carries anything but the stamp, the repository
+links, the build statement, and the staleness rule.
 
 **The pack carries brand rules, never assistant behaviour.** How to review, what a
 review looks like, and any workflow steps belong to the assistant's own instructions,
@@ -82,27 +106,35 @@ rule** — past that, the guardian treats the holds snapshot as unverified and c
 any ruling that depends on recent vocabulary, recommending a check for a regenerated
 version.
 
-## The shareable filter
+## The filter
 
-The pack is built to leave the governed environment — an OpenAI-hosted knowledge file,
-a shared skill — so it is compiled through a filter, applied to everything before it
-enters. The organizing idea: **keep the rule, drop the paper trail.**
+Everything passes through a filter before it enters the pack. The organizing idea:
+**keep the rule, drop the paper trail.** How strict the filter is depends on where the
+pack goes. Ours is published only to a document our own staff can read, so it carries
+competitor context. A copy that leaves the organisation, such as a hosted GPT knowledge
+file or a copy the client keeps, needs the stricter rule on competitors described below.
 
 **Strip:**
 
 - Personal names and attributions — maintainers, approvers, client stakeholders — and
   governance provenance: ruling dates, meeting references, changelog citations. The
   deployed guardian needs the rule, not the story of how it was decided.
-- Competitor names and competitive intelligence. Competitor-derived rules are restated
-  neutrally: "this positioning angle is category-saturated — never the headline claim"
-  carries the rule without naming who saturated it.
+- For any copy that leaves the organisation: competitor names and competitive
+  intelligence. Competitor-derived rules are restated neutrally: "this positioning
+  angle is category-saturated — never the headline claim" carries the rule without
+  naming who saturated it.
 - Internal-only material: internal shorthands (keeping the outward rule they produce),
   internal benchmarks, anything the kit marks as not cleared for external use.
   Unlaunched or unratified wording is in this class — the pack carries the *hold*
   ("flag any line presented as a tagline as premature") without reproducing the wording
   itself.
-- Repo apparatus: changelog content, PR conventions, file paths as instructions. The
-  deployed guardian cannot read the repo, so every rule must be self-contained.
+- Repo apparatus: changelog content, PR conventions, file paths as instructions. Every
+  rule must be self-contained, readable without the repo. The one exception is the
+  repository link in §0, which identifies the kit.
+- Build history: regeneration notes, eval scores, filter notes. They belong in the
+  changelog and the PR, never in the pack.
+- From approved samples: engagement figures (internal benchmarks), and links the
+  assistant cannot resolve.
 
 **Keep, deliberately:**
 
@@ -112,10 +144,13 @@ enters. The organizing idea: **keep the rule, drop the paper trail.**
   rules, "unnumbered by design" notes).
 - Register distinctions that are themselves rules ("X is internal register; client-facing
   copy prefers Y") — the distinction is guidance, not a leak.
+- For an internal destination: the competitive landscape, named. It is context for
+  judging copy, not permission for copy to name a competitor; the kit's rules on
+  competitor commentary still apply.
 
 And the tie-breaker: **when a filter call is unsure, withhold and say so in the PR
 body.** A human reviewer can restore an over-cautious omission in thirty seconds; a
-leaked line in a hosted knowledge file cannot be unshipped. The reviewer restores; the
+leaked line in a published document cannot be unshipped. The reviewer restores; the
 pack never leaks.
 
 ## Generation discipline
@@ -127,7 +162,7 @@ pack never leaks.
   merge in the minutes between reading its state and pushing to its branch, and a
   regeneration pushed to a merged branch is stranded work that no gate will ever
   surface.
-- **The pack lands by PR, never direct commit.** The shareable filter is exactly the
+- **The pack lands by PR, never direct commit.** The filter is exactly the
   kind of judgment a human should review. The PR body states the base commit the pack
   was built from, what was stripped, what was deliberately kept, and any borderline
   calls the reviewer may want to restore.
@@ -142,6 +177,8 @@ have one:
 
 - [`pack-freshness-check.yml`](../.github/workflows/pack-freshness-check.yml) fails any
   PR that changes a voice-relevant source file without also regenerating the pack. The
+  watched sources include the visual guide, because the pack carries its copy
+  conventions. The
   check is deliberately diff-based — *did the pack move when its sources moved* — not
   content-based. Regeneration judgment lives in the generator; CI only enforces that it
   ran.
@@ -172,7 +209,8 @@ The pack deploys two ways:
   silent.
 - **Hand-uploaded copy:** a hosted GPT knowledge file, an assistant skill's reference
   file, or a copy the client keeps themselves. The assistant's behaviour lives in its own
-  instructions field or skill body, not in the pack.
+  instructions field or skill body, not in the pack, and a copy that leaves the
+  organisation goes through the stricter filter on competitors.
 
 **A mirror must be a copy, not a rewrite.** Our first mirror was an agent that updated
 each doc from the repository, and it paraphrased as it went: it dropped sentences,

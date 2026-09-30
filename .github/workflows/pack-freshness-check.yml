@@ -35,7 +35,7 @@ jobs:
           BASE="origin/${{ github.base_ref }}"
           changed=$(git diff --name-only "$BASE"...HEAD)
 
-          watched='^(brand/brand-voice\.md|brand/brand-context\.md|brand/retired-language\.md|brand/live-holds\.md|reference/evidence\.md|reference/approved-copy-samples\.md|strategy/positioning\.md|strategy/message-house\.md)$'
+          watched='^(brand/brand-voice\.md|brand/brand-context\.md|brand/brand-visual\.md|brand/retired-language\.md|brand/live-holds\.md|reference/evidence\.md|reference/approved-copy-samples\.md|strategy/positioning\.md|strategy/message-house\.md)$'
           voice_changed=$(echo "$changed" | grep -E "$watched" || true)
           pack_changed=$(echo "$changed" | grep -Fx "$PACK" || true)
 

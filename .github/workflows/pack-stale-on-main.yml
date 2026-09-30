@@ -55,6 +55,7 @@ jobs:
           sources=(
             brand/brand-voice.md
             brand/brand-context.md
+            brand/brand-visual.md
             brand/retired-language.md
             brand/live-holds.md
             reference/evidence.md

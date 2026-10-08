@@ -16,6 +16,12 @@ name: Pack staleness on main
 # missed push or force push cannot hide staleness, and the signal self-clears
 # on the push that merges the regeneration PR.
 #
+# The stamp is read from the §0 line `**Source commit:** <repo>/tree/<full sha>`,
+# whose format the generator's own §0 shape check fixes. The prose stamp line
+# above it is not used: across the fleet it carries a short sha, a backticked
+# sha, or wraps before the sha, so matching it silently fell back on three of
+# five packs.
+#
 # The stamp, not the last commit that touched the pack file, is the base.
 # Measuring from the pack file's last commit let a rebase hide staleness: a
 # pack PR built before another source-changing PR merged, then rebased onto
@@ -73,7 +79,7 @@ jobs:
             strategy/message-house.md
           )
 
-          stamp=$(grep -m1 -oE 'source commit \*\*[0-9a-f]{40}\*\*' "$PACK" | grep -oE '[0-9a-f]{40}' || true)
+          stamp=$(grep -m1 -oE '^\*\*Source commit:\*\* [^ ]*/tree/[0-9a-f]{40}' "$PACK" | grep -oE '[0-9a-f]{40}$' || true)
           if [ -n "$stamp" ] && git merge-base --is-ancestor "$stamp" HEAD 2>/dev/null; then
             base="$stamp"
             base_desc="The pack's §0 stamps source commit \`${stamp:0:12}\`"

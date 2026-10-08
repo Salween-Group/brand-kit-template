@@ -67,7 +67,7 @@ jobs:
               strategy/positioning.md
               strategy/message-house.md
             )
-            stamp=$(grep -m1 -oE 'source commit \*\*[0-9a-f]{40}\*\*' "$PACK" | grep -oE '[0-9a-f]{40}' || true)
+            stamp=$(grep -m1 -oE '^\*\*Source commit:\*\* [^ ]*/tree/[0-9a-f]{40}' "$PACK" | grep -oE '[0-9a-f]{40}$' || true)
             if [ -z "$stamp" ]; then
               echo "::warning::$PACK has no §0 source-commit stamp; stamp test skipped."
             elif ! git merge-base --is-ancestor "$stamp" HEAD 2>/dev/null; then

@@ -181,12 +181,18 @@ have one:
   conventions. The
   check is deliberately diff-based — *did the pack move when its sources moved* — not
   content-based. Regeneration judgment lives in the generator; CI only enforces that it
-  ran.
+  ran. When a PR does change the pack, the check also reads the §0 source-commit stamp
+  and fails if a watched source changed between that commit and the merged result, so a
+  pack built before another sync PR merged cannot land one step behind.
 - [`pack-stale-on-main.yml`](../.github/workflows/pack-stale-on-main.yml) covers the gap
   the PR gate cannot see. The freshness check runs on pull requests, so a merge that
   lands voice-source changes without a pack update leaves `main` silently stale — no
   red X anywhere. This watcher opens a `pack-stale` issue on the kit when that happens,
-  and the issue closes itself on the push that brings the pack current.
+  and the issue closes itself on the push that brings the pack current. Staleness is
+  measured from the §0 stamp, not from the last commit that touched the pack file: a
+  rebase can move source commits in front of the pack's own commit, so file history
+  says "fresh" while the stamp says otherwise. The last-touch commit is only the
+  fallback for a pack without a usable stamp.
 
 The general lesson behind the second workflow: **never read the absence of a CI failure
 as freshness.** A gate that runs on PRs proves nothing about what a merge race left on

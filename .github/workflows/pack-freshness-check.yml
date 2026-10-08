@@ -9,6 +9,15 @@ name: Voice guardian pack freshness
 # Skipped entirely on kits that have no pack yet. The check is deliberately
 # diff-based (did the pack move when its sources moved), not content-based —
 # regeneration judgment lives in the skill; CI only enforces that it ran.
+#
+# Second test, for PRs that do touch the pack: its §0 source-commit stamp
+# must not be behind the merged result. pull_request checks out the merge of
+# the PR into its base, so any watched source commit between the stamp and
+# that merge (typically another sync PR that merged after the pack was built)
+# fails the check. Without it a pack PR built before such a merge passed the
+# diff test and merged one step stale (observed on a kit, 8 October 2026).
+# A pack with no stamp, or a stamp outside this history, skips this test with
+# a warning.
 
 on:
   pull_request:
@@ -44,6 +53,33 @@ jobs:
             echo "Changed voice sources:"
             echo "$voice_changed"
             exit 1
+          fi
+
+          if [ -n "$pack_changed" ]; then
+            sources=(
+              brand/brand-voice.md
+              brand/brand-context.md
+              brand/brand-visual.md
+              brand/retired-language.md
+              brand/live-holds.md
+              reference/evidence.md
+              reference/approved-copy-samples.md
+              strategy/positioning.md
+              strategy/message-house.md
+            )
+            stamp=$(grep -m1 -oE 'source commit \*\*[0-9a-f]{40}\*\*' "$PACK" | grep -oE '[0-9a-f]{40}' || true)
+            if [ -z "$stamp" ]; then
+              echo "::warning::$PACK has no §0 source-commit stamp; stamp test skipped."
+            elif ! git merge-base --is-ancestor "$stamp" HEAD 2>/dev/null; then
+              echo "::warning::$PACK is stamped at ${stamp:0:12}, which is not in this PR's history; stamp test skipped."
+            else
+              behind=$(git log --format='- %h %s' "${stamp}..HEAD" -- "${sources[@]}")
+              if [ -n "$behind" ]; then
+                echo "::error::$PACK is stamped at ${stamp:0:12}, but these voice-source commits are in the merged result and not in the pack. Regenerate the pack on this branch from the current base (the voice-guardian-pack skill adopts an open pack PR's branch)."
+                echo "$behind"
+                exit 1
+              fi
+            fi
           fi
 
           echo "Pack freshness OK."

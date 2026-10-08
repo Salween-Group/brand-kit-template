@@ -12,9 +12,18 @@ name: Pack staleness on main
 #   * fresh -> close any open pack-stale issue.
 #
 # Staleness is absolute, not push-range-based: the test is "did any voice
-# source change since the commit that last touched the pack", so a missed
-# push or force push cannot hide staleness, and the signal self-clears on
-# the push that merges the regeneration PR.
+# source change since the source commit stamped in the pack's §0", so a
+# missed push or force push cannot hide staleness, and the signal self-clears
+# on the push that merges the regeneration PR.
+#
+# The stamp, not the last commit that touched the pack file, is the base.
+# Measuring from the pack file's last commit let a rebase hide staleness: a
+# pack PR built before another source-changing PR merged, then rebased onto
+# it, puts those source commits *before* its own pack commit in history, so
+# the pack merged looking fresh while its §0 still described the older tree
+# (observed on a kit, 8 October 2026). The last-touch commit remains the
+# fallback for a pack whose §0 carries no stamp, or a stamp that is not an
+# ancestor of main (e.g. a squash-merged branch-mode build).
 #
 # Pure signal — the run itself stays green. Regeneration judgment lives in
 # the voice-guardian-pack skill (2.0.0+ is repo-first: run it from anywhere,
@@ -64,8 +73,16 @@ jobs:
             strategy/message-house.md
           )
 
-          pack_commit=$(git log -1 --format=%H -- "$PACK")
-          stale_commits=$(git log --format='- %h %s' "${pack_commit}..HEAD" -- "${sources[@]}")
+          stamp=$(grep -m1 -oE 'source commit \*\*[0-9a-f]{40}\*\*' "$PACK" | grep -oE '[0-9a-f]{40}' || true)
+          if [ -n "$stamp" ] && git merge-base --is-ancestor "$stamp" HEAD 2>/dev/null; then
+            base="$stamp"
+            base_desc="The pack's §0 stamps source commit \`${stamp:0:12}\`"
+          else
+            base=$(git log -1 --format=%H -- "$PACK")
+            base_desc="The pack has no usable §0 source-commit stamp; it was last updated in \`${base:0:12}\`"
+          fi
+          echo "Staleness base: $base"
+          stale_commits=$(git log --format='- %h %s' "${base}..HEAD" -- "${sources[@]}")
 
           open_issue=$(gh issue list --repo "$REPO" --label "$LABEL" --state open \
             --json number --jq '.[0].number // empty')
@@ -82,7 +99,7 @@ jobs:
 
             body_file=$(mktemp)
             {
-              echo "The pack was last updated in \`${pack_commit:0:12}\`, and these commits have touched voice sources on \`main\` since:"
+              echo "${base_desc}, and these commits have touched voice sources on \`main\` since:"
               echo ""
               echo "$stale_commits"
               echo ""
@@ -102,7 +119,7 @@ jobs:
 
           if [ -n "$open_issue" ]; then
             gh issue close "$open_issue" --repo "$REPO" --comment \
-              "The pack caught up in \`$(git rev-parse --short=12 HEAD)\` — no voice-source commits after the pack's last update. Closing automatically. A synced mirror picks this up on its next sync; a hand-uploaded copy still needs re-uploading. Verify any deployed copy via the pack's §0 stamp."
+              "The pack caught up in \`$(git rev-parse --short=12 HEAD)\` — no voice-source commits after the pack's stamped source commit. Closing automatically. A synced mirror picks this up on its next sync; a hand-uploaded copy still needs re-uploading. Verify any deployed copy via the pack's §0 stamp."
             echo "Fresh — closed signal issue #$open_issue."
           else
             echo "Pack fresh — nothing to do."

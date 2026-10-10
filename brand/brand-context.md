@@ -13,10 +13,11 @@
     fathom_query:  [Client Name]                                     # Fathom meeting search term; defaults to client if omitted
     fathom_team:   [Fathom Team Name]                                # optional; delete this line if the client has no Fathom team
     teams_chat:    [Exact Microsoft Teams Chat Name]                 # destination chat for proposed brand-kit updates
-    sources:       fathom                                            # sources brand-sync harvests: fathom, email (comma-separated); defaults to fathom
+    sources:       fathom                                            # sources brand-sync harvests: fathom, email, clickup (comma-separated); defaults to fathom
     senior_stakeholders: [Full Name One]                             # optional; subset of stakeholders whose call rulings outrank an email on the same point
     email_domains: [client.com]                                      # email source only: the client's email domain(s), comma-separated
     email_archive: [archive-client@yourdomain.com]                   # email source only, optional; defaults to archive-<kit-slug>@ the agency domain
+    clickup_folder: [ClickUp folder id]                              # clickup source only: the client's ClickUp folder id (a folder, never a space or a single list)
     samples:                       # Consumed by the brand-kit-samples-refresh skill. Optional — every value has a fallback.
       planable_workspace: [Client Name]     # Planable workspace name; defaults to the client name when absent
       blog_path: [www.client.com/blog/]     # URL prefix identifying articles among GA4 landing pages; without it the article half of a samples refresh skips cleanly

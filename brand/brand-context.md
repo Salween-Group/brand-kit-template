@@ -15,6 +15,7 @@
     teams_chat:    [Exact Microsoft Teams Chat Name]                 # destination chat for proposed brand-kit updates
     sources:       fathom                                            # sources brand-sync harvests: fathom, email, clickup (comma-separated); defaults to fathom
     senior_stakeholders: [Full Name One]                             # optional; subset of stakeholders whose call rulings outrank an email on the same point
+    internal_stakeholders: [Full Name]                               # optional; agency people who make brand decisions for the client (a fractional CMO, say); their call input counts only on meetings the fathom_query search returns
     email_domains: [client.com]                                      # email source only: the client's email domain(s), comma-separated
     email_archive: [archive-client@yourdomain.com]                   # email source only, optional; defaults to archive-<kit-slug>@ the agency domain
     clickup_folder: [ClickUp folder id]                              # clickup source only: the client's ClickUp folder id (a folder, never a space or a single list)

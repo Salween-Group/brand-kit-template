@@ -80,7 +80,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Scan brand/live-holds.md for expired review-by dates
         id: scan
@@ -186,7 +186,7 @@ jobs:
   cadence:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Scan kit files for lapsed review cadences
         id: scan
@@ -391,7 +391,7 @@ jobs:
   samples:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Scan approved samples for current banned words
         id: scan

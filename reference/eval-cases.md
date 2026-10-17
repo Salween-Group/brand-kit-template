@@ -37,7 +37,7 @@ Fail snippets deliberately quote retired phrases and hold-breaching copy verbati
 
 ## Cases
 
-<!-- Delete the three example cases below once the first real cases are added. -->
+<!-- Delete the example cases below once the first real cases are added. -->
 
 ### EC-01: [Retired figure in body copy]
 
@@ -68,3 +68,43 @@ Fail snippets deliberately quote retired phrases and hold-breaching copy verbati
   > [e.g. A sentence citing a `usable` register row in its exact approved wording.]
 - **Why:** [e.g. Correct wording, correct vintage — must NOT be flagged; this case guards against over-flagging.]
 - **Source:** [e.g. approved-copy-samples Sample Set 1]
+
+### EC-04: [External study outside the backbone, properly attributed]
+
+- **Expected:** pass
+- **Tests:** reference/evidence.md § "How to use this register"
+- **Tier:** judgement
+- **Snippet:**
+  > [e.g. "Acme Research's Treasury Outlook 2027 survey, fielded in June 2026 among 300 finance directors, found that 61% of them plan to consolidate payment providers."]
+- **Why:** [e.g. Source, fieldwork vintage and scope all in the sentence — at most an advisory sense-check flag for the account team, never a failure for lacking a register row.]
+- **Source:** [e.g. synthetic — figures illustrative, not citable]
+
+### EC-05: [The same statistic as a bare fact]
+
+- **Expected:** fail
+- **Tests:** reference/evidence.md § "How to use this register"
+- **Tier:** judgement
+- **Snippet:**
+  > [e.g. "61% of finance directors plan to consolidate payment providers."]
+- **Why:** [e.g. No source or vintage in the sentence — external research never travels as a bare fact.]
+- **Source:** [e.g. synthetic — figures illustrative, not citable]
+
+### EC-06: [Practitioner survey generalised to companies]
+
+- **Expected:** fail
+- **Tests:** reference/evidence.md § "How to use this register"
+- **Tier:** judgement
+- **Snippet:**
+  > [e.g. "Acme Research's Treasury Outlook 2027 survey, fielded in June 2026, shows that 61% of companies plan to consolidate payment providers."]
+- **Why:** [e.g. The study surveyed 300 finance directors; "companies" strips the scope the figure depends on.]
+- **Source:** [e.g. synthetic — figures illustrative, not citable]
+
+### EC-07: [Forward-dated report title used as the vintage]
+
+- **Expected:** fail
+- **Tests:** reference/evidence.md § "How to use this register"
+- **Tier:** judgement
+- **Snippet:**
+  > [e.g. "According to Acme Research's Treasury Outlook 2027, 61% of finance directors plan to consolidate payment providers."]
+- **Why:** [e.g. "2027" is the report title, not the fieldwork date — the vintage must be the fieldwork or publication date.]
+- **Source:** [e.g. synthetic — figures illustrative, not citable]

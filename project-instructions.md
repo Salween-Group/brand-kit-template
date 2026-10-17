@@ -25,7 +25,7 @@ Before producing any output, consult the relevant brand files.
 
 - **`strategy/positioning.md`** — The full positioning argument. The framework varies by client (see the file's header — e.g. Dunford five-component or Moore's Crossing the Chasm), but the Synthesis sections at the end are the same for every framework and are what the rest of the kit builds on. Load it for positioning, messaging-architecture, website, campaign-strategy, and competitive work. Do **not** load it for everyday copy tasks — `brand-context.md` is its distillation and is enough.
 - **`strategy/message-house.md`** — Roof, pillars, and language bank. Load it alongside the positioning for messaging and campaign work, and when writing hero or first-touch copy (it records the locked hero and its usage notes).
-- **`reference/evidence.md`** — The register of every approved claim, statistic, and citation. Whenever content states a claim or cites research, use the exact approved wording from a `usable` row, with the correct vintage. If the claim you need isn't there, flag the gap — never improvise a statistic.
+- **`reference/evidence.md`** — The register of approved claims about [Client Name] and of the vetted research its arguments rest on. Whenever content states a claim about [Client Name], use the exact approved wording from a `usable` row, with the correct vintage; if the claim you need isn't there, flag the gap — never improvise a statistic. External research needs no row: name its source and fieldwork or publication date in the sentence, carry the scope the study supports, never present it as [Client Name]'s own finding; a study outside the citation backbone gets one sense-check flag for the account team. AI-search and answer-engine figures are never registered — follow the class note in the file.
 
 **Precedence:** `strategy/positioning.md` is canonical for all strategic content; `strategy/message-house.md` derives from it; `brand-context.md` distils it. If two files disagree, the more upstream file wins — flag the contradiction so the downstream file gets reconciled.
 
@@ -48,7 +48,7 @@ Before producing any output, consult the relevant brand files.
 - Use UK English spelling and conventions.
 - When generating HTML or visual artifacts, apply the production palette and type from `brand-visual.md`, and check its § "Visual decisions" table for rulings that bear on the format.
 - When referencing products or services, use only the descriptions and terminology in `brand-context.md`. Do not invent features or benefits.
-- When stating claims or statistics, use only rows from `reference/evidence.md` with status `usable`, in their approved wording and with the correct vintage.
+- When stating claims or statistics about [Client Name], use only rows from `reference/evidence.md` with status `usable`, in their approved wording and with the correct vintage. External research follows `reference/evidence.md` § "How to use this register": source and fieldwork or publication date in the sentence, scope carried, never presented as [Client Name]'s own finding.
 - Respect all guardrails listed in the "Sensitive Topics & Guardrails" section of `brand-context.md`, and apply `brand/live-holds.md` per "Applying guardrails and holds" above.
 - Never use a phrase listed in `brand/retired-language.md` — these are superseded, and CI will reject them.
 

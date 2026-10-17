@@ -52,8 +52,10 @@ project chat and crowds out the content.
   strategic content goes through a PR — and if it needs client confirmation, the open PR
   *is* the hold: it stays open until the client confirms. (Alternatively, merge with a
   scoped entry in `brand/live-holds.md` whose lift condition is the client's confirmation.)
-- **Claims live in one place.** Every claim, statistic, and citation has a row in
-  `reference/evidence.md`. Correct it there once, then reconcile the documents that cite
+- **Claims live in one place.** Every claim about the client has a row in
+  `reference/evidence.md`, alongside the vetted research its arguments rest on;
+  external research cited fresh for one piece needs a named source in the copy,
+  not a row. Correct it there once, then reconcile the documents that cite
   it — never fork a claim's wording across files.
 - **Superseded copy is machine-checked.** When a hero, claim, or vocabulary ruling is
   replaced, the dead phrase goes into `brand/retired-language.md` the same day. CI

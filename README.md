@@ -83,6 +83,15 @@ project chat and crowds out the content.
   a deployed copy is current. The full method — pack anatomy, the
   filter, and generation discipline — is documented in
   [`docs/voice-guardian-pack.md`](docs/voice-guardian-pack.md).
+- **The rules file is a build product too.** An optional `brand/rules.yml` lists
+  the kit's mechanical rules (banned and retired terms, vocabulary pairs, holds,
+  claim wording, roster, spelling regime, palette) as exact values, each with a
+  `source` pointer back to the section it came from, so tools that gate copy
+  load YAML instead of guessing at prose. It is regenerated in the same PR as
+  any change to its source files and never edited directly; rules no script can
+  test are listed under `judgement_only` so coverage stays visible. Schema:
+  [`docs/rules.schema.json`](docs/rules.schema.json); method:
+  [`docs/rules-file.md`](docs/rules-file.md).
 - **This public repo is guarded against confidential references.** This template is
   deliberately public, so a CI check (`.github/workflows/client-leakage-guard.yml` —
   this repository only, never client kits) greps every tracked file for a confidential

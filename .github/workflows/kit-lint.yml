@@ -35,7 +35,9 @@ name: Kit lint
 #      reference/eval-cases.md carries Expected (pass | fail), Tests, Tier
 #      (deterministic | judgement), Snippet, Why and Source — consumers parse
 #      these mechanically, and an incomplete case silently drops out of every
-#      regression score. Case Tests pointers are validated by checks 1 and 5.
+#      regression score. Case ids are unique: scores report misses by id, so
+#      two cases sharing one make a miss ambiguous. Case Tests pointers are
+#      validated by checks 1 and 5.
 #
 # Scope notes: build products, history, and docs are exempt from the pointer
 # checks (CHANGELOG legitimately references deleted holds and quotes section
@@ -381,6 +383,12 @@ jobs:
           # as check 2: every `### EC-` block must be complete. The rule POINTERS
           # inside cases need no check of their own — the Tests field uses the
           # kit's standard pointer forms, which checks 1 and 5 already validate.
+          #
+          # Ids must also be unique. Scores name misses by id ("missed: EC-04"),
+          # and the file's own convention is to retire an id rather than reuse it,
+          # so a second case under an existing id makes every score that mentions
+          # it ambiguous. Cases are not always in id order in the file, so a new
+          # case numbered from the last heading can collide with one further up.
           EC="reference/eval-cases.md"
           if [ -f "$EC" ]; then
             while IFS='|' read -r kind heading detail; do
@@ -388,6 +396,7 @@ jobs:
                 ECMISS) fail "$EC — case \"$heading\" is missing required field(s): $detail" ;;
                 ECEXP)  fail "$EC — case \"$heading\" has Expected \"$detail\", not in the vocabulary (pass | fail)" ;;
                 ECTIER) fail "$EC — case \"$heading\" has Tier \"$detail\", not in the vocabulary (deterministic | judgement)" ;;
+                ECDUP)  fail "$EC — case \"$heading\" reuses an id already taken by \"$detail\" (ids are never reused: give the new case the next unused number)" ;;
               esac
             done < <(awk '
               function trim(x) { gsub(/^[[:space:]`]+|[[:space:]`]+$/, "", x); return x }
@@ -403,7 +412,15 @@ jobs:
                 if (miss != "") { sub(/, $/, "", miss); printf "ECMISS|%s|%s\n", h, miss }
               }
               /<!--/ { inc=1 } /-->/ { inc=0; next } inc { next }
-              /^### EC-/ { flush(); h=$0; sub(/^### +/, "", h); delete s; next }
+              /^### EC-/ {
+                flush(); h=$0; sub(/^### +/, "", h); delete s
+                if (match(h, /^EC-[0-9]+/)) {
+                  id = substr(h, 1, RLENGTH)
+                  if (id in seen) printf "ECDUP|%s|%s\n", h, seen[id]
+                  else seen[id] = h
+                }
+                next
+              }
               /^### /    { flush(); h="" }
               /^## /     { flush(); h="" }
               h != "" && /^- \*\*Expected:\*\*/ {

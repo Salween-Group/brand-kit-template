@@ -90,18 +90,25 @@ brand/brand-visual.md
 reference/evidence.md
 ```
 
-## Checks (planned)
+## Checks
 
-The schema lands first; the CI workflow follows once a pilot kit has proved the
-shape. That workflow will fail a PR when:
+`.github/workflows/rules-file-check.yml` runs on every push to `main` and every
+PR. A kit without `brand/rules.yml` skips it. It fails when:
 
-- the YAML does not validate against `docs/rules.schema.json`;
-- `source_hash` does not match the current source files (stale file);
+- the YAML does not validate against `docs/rules.schema.json` (fetched from
+  this template's `main` branch);
+- `source_hash` does not match the current source files (stale file: a source
+  changed and the rules file was not regenerated in the same change);
 - a `source` pointer does not resolve to a real section (same contract as kit
   lint: H2-H4 heading with numbering stripped, or a bold run-in label, matched
-  by prefix);
+  by prefix, HTML comments ignored);
 - a literal does not appear in the section its `source` names (the generator
-  invented it).
+  invented it);
+- `generated.kit` does not name the repository the file is in.
+
+A stamped `source_commit` missing from the repository's history is a warning
+only, because a squash merge orphans it. On this template, which carries no
+rules file, the workflow checks that the schema is itself a valid JSON Schema.
 
 Running `reference/eval-cases.md` through the mechanical checks with the rules
 file as input, and failing on a score drop, comes with the brand-gate change

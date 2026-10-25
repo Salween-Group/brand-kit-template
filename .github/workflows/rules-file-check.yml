@@ -1,0 +1,269 @@
+name: Rules file check
+
+# brand/rules.yml is a generated build product: the machine-readable index of
+# the kit's mechanical rules, each with a `source` pointer back to the section
+# it was extracted from (method: docs/rules-file.md in brand-kit-template).
+# Tools that gate copy load it instead of parsing prose, so a wrong or stale
+# rules file is worse than none: it gates copy against rules the kit no
+# longer holds, or against rules it never held. This check fails when:
+#
+#   1. Schema. The file does not validate against docs/rules.schema.json in
+#      brand-kit-template (fetched from the template's main branch; the
+#      template validates against its own copy).
+#   2. Staleness. generated.source_hash does not match the current source
+#      files, computed exactly as docs/rules-file.md defines it. A kit edit
+#      that changes a source without regenerating the rules file fails here.
+#   3. Pointer resolution. A `source` does not resolve to a real section:
+#      same contract as kit lint — H2-H4 heading with multi-level numbering
+#      stripped, or a bold run-in label, matched by prefix, HTML comments
+#      ignored. Live-holds pointers use the arrow form.
+#   4. Literal provenance. A literal the file carries (banned and vocabulary
+#      terms, retired phrases, protected-term variants, hold literals,
+#      boilerplate text, claim wording, palette hex values) does not appear in
+#      the section its `source` names. This is what stops a generator
+#      inventing a rule.
+#
+# Also checked: generated.kit names this repository. A stamped source commit
+# that is not in this repository's history is a warning, not a failure
+# (squash merges legitimately orphan it).
+#
+# Kits without brand/rules.yml skip the check: the file is optional until the
+# generator ships. On the template, which carries no rules file, the check
+# validates the schema itself instead.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether to run
+        id: gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMPLATE_MODE=0
+          if [ "${GITHUB_REPOSITORY:-}" = "Salween-Group/brand-kit-template" ]; then TEMPLATE_MODE=1; fi
+          echo "template=$TEMPLATE_MODE" >> "$GITHUB_OUTPUT"
+          if [ "$TEMPLATE_MODE" = 0 ] && [ ! -f brand/rules.yml ]; then
+            echo "No brand/rules.yml in this kit — check skipped."
+            echo "run=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install validator dependencies
+        if: steps.gate.outputs.run == '1'
+        shell: bash
+        run: python3 -m pip install --quiet --disable-pip-version-check jsonschema==4.26.0 PyYAML==6.0.3
+
+      - name: Fetch the schema
+        if: steps.gate.outputs.run == '1'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.gate.outputs.template }}" = 1 ]; then
+            cp docs/rules.schema.json "$RUNNER_TEMP/rules.schema.json"
+          else
+            URL="https://raw.githubusercontent.com/Salween-Group/brand-kit-template/main/docs/rules.schema.json"
+            if ! curl -fsSL --retry 3 "$URL" -o "$RUNNER_TEMP/rules.schema.json"; then
+              echo "::error::Could not fetch the rules-file schema from $URL"
+              exit 1
+            fi
+          fi
+
+      - name: Write the checker
+        if: steps.gate.outputs.run == '1'
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/rules_check.py" <<'PY'
+          import hashlib, json, os, re, subprocess, sys
+
+          import jsonschema
+          import yaml
+
+          sys.stdout.reconfigure(encoding="utf-8")  # messages quote § and → pointers
+          RULES = "brand/rules.yml"
+          schema = json.load(open(sys.argv[1], encoding="utf-8"))
+          template_mode = sys.argv[2] == "1"
+          errors, warnings = [], []
+
+          def err(msg):
+              errors.append(msg)
+
+          # On the template: the schema itself must be a valid JSON Schema.
+          if template_mode:
+              try:
+                  jsonschema.Draft202012Validator.check_schema(schema)
+                  print("Schema is a valid JSON Schema (draft 2020-12).")
+              except jsonschema.SchemaError as e:
+                  err("docs/rules.schema.json is not a valid JSON Schema: %s" % e.message)
+              if not os.path.exists(RULES):
+                  for m in errors:
+                      print("::error file=docs/rules.schema.json::" + m)
+                  sys.exit(1 if errors else 0)
+
+          rules = yaml.safe_load(open(RULES, encoding="utf-8"))
+
+          # 1. Schema
+          v = jsonschema.Draft202012Validator(schema, format_checker=jsonschema.FormatChecker())
+          for e in sorted(v.iter_errors(rules), key=lambda e: list(e.path)):
+              where = "/".join(str(p) for p in e.path) or "(top level)"
+              err("schema: %s at %s" % (e.message, where))
+          if errors:
+              # Later checks assume the shape; stop here.
+              for m in errors:
+                  print("::error file=%s::%s" % (RULES, m))
+              sys.exit(1)
+
+          def read(path):
+              with open(path, "rb") as f:
+                  return f.read().replace(b"\r\n", b"\n")
+
+          gen = rules["generated"]
+
+          # Kit identity
+          repo = os.environ.get("GITHUB_REPOSITORY", "").split("/")[-1]
+          if repo and not template_mode and gen["kit"] != repo:
+              err("generated.kit is %r but this repository is %r" % (gen["kit"], repo))
+
+          # 2. Staleness
+          missing = [p for p in gen["sources"] if not os.path.exists(p)]
+          if missing:
+              err("generated.sources lists files that do not exist: %s" % ", ".join(missing))
+          else:
+              h = hashlib.sha256()
+              for p in gen["sources"]:
+                  h.update(p.encode("utf-8") + b"\n" + read(p) + b"\n")
+              want = "sha256:" + h.hexdigest()
+              if gen["source_hash"] != want:
+                  err("stale: the source files have changed since the rules file was generated "
+                      "(source_hash %s, current %s). Regenerate brand/rules.yml in this change."
+                      % (gen["source_hash"], want))
+
+          # Stamped commit present in history (warning only)
+          sha = gen["source_commit"]
+          if subprocess.run(["git", "cat-file", "-e", sha + "^{commit}"],
+                            capture_output=True).returncode != 0:
+              warnings.append("generated.source_commit %s is not in this repository's history" % sha)
+
+          # 3. Pointer resolution — same section contract as kit lint.
+          def sections(path):
+              text = read(path).decode("utf-8")
+              text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
+              lines = text.split("\n")
+              heads = []
+              for i, line in enumerate(lines):
+                  m = re.match(r"^(#{2,4})\s+(.*)$", line)
+                  if m:
+                      name = re.sub(r"^[0-9]+(\.[0-9]+)*[.)]?\s+", "", m.group(2)).strip()
+                      heads.append((name, len(m.group(1)), i))
+                      continue
+                  b = re.match(r"^\*\*([^*]+)\*\*", line)
+                  if b:
+                      heads.append((b.group(1).strip().rstrip(":").strip(), None, i))
+              out = []
+              for idx, (name, level, start) in enumerate(heads):
+                  end = len(lines)
+                  if level is not None:
+                      for _, level2, start2 in heads[idx + 1:]:
+                          if level2 is not None and level2 <= level:
+                              end = start2
+                              break
+                  else:
+                      for j in range(start + 1, len(lines)):
+                          if not lines[j].strip() or lines[j].startswith("#"):
+                              end = j
+                              break
+                  out.append((name, "\n".join(lines[start:end])))
+              return out
+
+          cache = {}
+          def resolve(src):
+              m = re.match(r'^(\S+\.md) (?:§|→) "([^"]+)"$', src)
+              if not m:
+                  return None
+              path, name = m.groups()
+              if not os.path.exists(path):
+                  return None
+              if path not in cache:
+                  cache[path] = sections(path)
+              for n, body in cache[path]:
+                  if n.startswith(name):
+                      return body
+              return None
+
+          # 4. Literal provenance
+          def norm(s):
+              s = s.replace("’", "'").replace("‘", "'")
+              s = s.replace("“", '"').replace("”", '"')
+              return re.sub(r"\s+", " ", s).strip().lower()
+
+          def body_text(body):
+              # Markdown emphasis and blockquote markers are not part of the words.
+              return norm(re.sub(r"[*>`]", "", body))
+
+          checked = 0
+          def walk(node, path):
+              global checked
+              if isinstance(node, dict):
+                  src = node.get("source")
+                  if isinstance(src, str):
+                      body = resolve(src)
+                      if body is None:
+                          err("%s: source does not resolve to a section: %s" % (path, src))
+                      else:
+                          lits = []
+                          for key in ("terms", "not", "never", "block"):
+                              lits += node.get(key) or []
+                          for key in ("phrase", "text", "wording"):
+                              if key in node:
+                                  lits.append(node[key])
+                          hay = body_text(body)
+                          for lit in lits:
+                              checked += 1
+                              if norm(re.sub(r"[*`]", "", lit)) not in hay:
+                                  err("%s: %r does not appear in its source section (%s)" % (path, lit, src))
+                  for k, val in node.items():
+                      walk(val, path + "." + k if path else k)
+              elif isinstance(node, list):
+                  for i, val in enumerate(node):
+                      walk(val, "%s[%d]" % (path, i))
+
+          walk(rules, "")
+
+          if rules.get("palette"):
+              ps = rules.get("palette_source")
+              body = resolve(ps) if ps else None
+              if body is None:
+                  err("palette_source is missing or does not resolve to a section: %s" % ps)
+              else:
+                  for c in rules["palette"]:
+                      checked += 1
+                      if c["hex"].lower() not in body.lower():
+                          err("palette: %s (%s) does not appear in %s" % (c["hex"], c["name"], ps))
+
+          for w in warnings:
+              print("::warning file=%s::%s" % (RULES, w))
+          for m in errors:
+              print("::error file=%s::%s" % (RULES, m))
+          print("Rules file check: %d literal(s) and pointer(s) checked, %d error(s), %d warning(s)."
+                % (checked, len(errors), len(warnings)))
+          sys.exit(1 if errors else 0)
+          PY
+
+      - name: Check brand/rules.yml
+        if: steps.gate.outputs.run == '1'
+        shell: bash
+        run: python3 "$RUNNER_TEMP/rules_check.py" "$RUNNER_TEMP/rules.schema.json" "${{ steps.gate.outputs.template }}"

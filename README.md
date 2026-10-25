@@ -89,7 +89,11 @@ project chat and crowds out the content.
   `source` pointer back to the section it came from, so tools that gate copy
   load YAML instead of guessing at prose. It is regenerated in the same PR as
   any change to its source files and never edited directly; rules no script can
-  test are listed under `judgement_only` so coverage stays visible. Schema:
+  test are listed under `judgement_only` so coverage stays visible.
+  `.github/workflows/rules-file-check.yml` fails any push or PR where the file
+  is off-schema, stale against its sources, carries a pointer that doesn't
+  resolve, or carries a literal its source section doesn't contain; kits
+  without the file skip it. Schema:
   [`docs/rules.schema.json`](docs/rules.schema.json); method:
   [`docs/rules-file.md`](docs/rules-file.md).
 - **This public repo is guarded against confidential references.** This template is

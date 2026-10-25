@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Salween-Group/brand-kit-template/docs/rules.schema.json",
+  "title": "Brand kit rules file (brand/rules.yml)",
+  "description": "The machine-readable index of a kit's mechanical rules. A build product generated from the kit's markdown, never edited by hand. Every rule carries a source pointer back to the section it was extracted from. See docs/rules-file.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "generated", "spelling", "retired", "banned", "vocabulary", "holds", "claims", "roster", "judgement_only"],
+  "properties": {
+    "schema": { "const": 1 },
+
+    "generated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kit", "source_commit", "source_hash", "sources", "generated_at"],
+      "properties": {
+        "kit": { "type": "string", "pattern": "^brand-kit-[a-z0-9-]+$" },
+        "source_commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "source_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "sources": {
+          "description": "The markdown files this file was generated from, in hashing order.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^(brand|reference|strategy)/[a-z0-9-]+\\.md$" }
+        },
+        "generated_at": { "type": "string", "format": "date" },
+        "generator": { "type": "string" }
+      }
+    },
+
+    "spelling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["regime", "source"],
+      "properties": {
+        "regime": { "enum": ["en-GB", "en-US"] },
+        "oxford_comma": { "type": "boolean" },
+        "source": { "$ref": "#/$defs/source" }
+      }
+    },
+
+    "style": {
+      "description": "Formatting rules a script can test. Anything needing judgement goes in judgement_only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source"],
+      "properties": {
+        "contractions": { "type": "boolean" },
+        "h1_case": { "enum": ["title", "sentence"] },
+        "heading_case": { "enum": ["title", "sentence"], "description": "H2 and below." },
+        "numbers_spell_out_below": { "type": "integer", "minimum": 0 },
+        "date_format": { "type": "string", "description": "e.g. 'D Month YYYY'." },
+        "no_ordinal_dates": { "type": "boolean" },
+        "max_em_dashes_per_paragraph": { "type": "integer", "minimum": 0 },
+        "source": { "$ref": "#/$defs/source" }
+      }
+    },
+
+    "mention_carve_out": {
+      "description": "Present when the kit permits quoting a banned or retired term in order to correct it. Checkers downgrade a hit inside quotation marks next to a corrective instruction to REVIEW rather than FAIL.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["applies_to", "source"],
+      "properties": {
+        "applies_to": { "type": "array", "items": { "enum": ["banned", "retired", "vocabulary"] }, "minItems": 1 },
+        "source": { "$ref": "#/$defs/source" }
+      }
+    },
+
+    "retired": {
+      "description": "Once-approved phrases with no remaining approved use. Mirrors brand/retired-language.md.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phrase", "source"],
+        "properties": {
+          "phrase": { "$ref": "#/$defs/literal" },
+          "use_instead": { "type": "string" },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "banned": {
+      "description": "Terms that were never on-brand. One entry per rule; slash-variants go in terms.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["terms", "severity", "source"],
+        "properties": {
+          "terms": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/literal" } },
+          "match": { "$ref": "#/$defs/match" },
+          "severity": { "enum": ["fail", "warn"] },
+          "condition": {
+            "type": "string",
+            "description": "The narrowing the rule states, e.g. 'as a verb', 'as self-description'. A hit is still reported; the condition tells the adjudicator what to decide."
+          },
+          "exception": { "type": "string", "description": "The rule's own carve-out, quoted from the source." },
+          "instead": { "type": "array", "items": { "type": "string" } },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "vocabulary": {
+      "description": "Use-this-not-that pairs. A hit is advisory: the not-term may be fine outside the table's context.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["use", "not", "severity", "source"],
+        "properties": {
+          "use": { "type": "string" },
+          "not": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/literal" } },
+          "match": { "$ref": "#/$defs/match" },
+          "severity": { "enum": ["warn", "review"] },
+          "context": { "type": "string", "description": "Where the ruling applies, e.g. 'external copy only'." },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "protected_terms": {
+      "description": "Names and coined terms with an exact approved form.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["term", "never", "source"],
+        "properties": {
+          "term": { "type": "string" },
+          "never": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/literal" } },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "boilerplate": {
+      "description": "Approved verbatim text. A checker diffs any near-match against it.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "source"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "text": { "type": "string", "minLength": 20 },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "holds": {
+      "description": "Mirrors brand/live-holds.md. Empty when the kit carries no holds.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "block", "scope", "review_by", "source"],
+        "properties": {
+          "name": { "type": "string" },
+          "block": {
+            "type": "array",
+            "description": "Literals whose appearance inside the hold's scope is a FAIL.",
+            "items": { "$ref": "#/$defs/literal" }
+          },
+          "scope": { "type": "string" },
+          "lift_condition": { "type": "string" },
+          "review_by": { "type": "string", "format": "date" },
+          "source": { "$ref": "#/$defs/hold_source" }
+        }
+      }
+    },
+
+    "claims": {
+      "description": "Mirrors the Proof points table in reference/evidence.md. Citation-backbone rows are not listed: they gate on attribution, which is judgement.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "status", "source"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "wording": { "type": "string", "description": "Exact approved wording. Absent for gap-to-close rows that have none yet." },
+          "summary": { "type": "string", "description": "What the row is about, for rows without approved wording." },
+          "status": { "enum": ["usable", "on-hold", "gap-to-close", "retired"] },
+          "as_of": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" },
+          "conditions": { "type": "string" },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    },
+
+    "roster": {
+      "description": "Mirrors the Approved spokespeople table. An empty roster means no individual may be quoted or bylined as the brand.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["people", "source"],
+      "properties": {
+        "people": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "title", "used_for"],
+            "properties": {
+              "name": { "type": "string" },
+              "title": { "type": "string" },
+              "used_for": { "type": "string" }
+            }
+          }
+        },
+        "source": { "$ref": "#/$defs/source" }
+      }
+    },
+
+    "palette": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "hex"],
+        "properties": {
+          "name": { "type": "string" },
+          "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+          "usage": { "type": "string" }
+        }
+      }
+    },
+    "palette_source": { "$ref": "#/$defs/source" },
+
+    "judgement_only": {
+      "description": "Rules no script can test. Listing them keeps coverage visible: every rule-bearing section ends up either extracted above or named here.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "source"],
+        "properties": {
+          "rule": { "type": "string" },
+          "source": { "$ref": "#/$defs/source" }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "literal": {
+      "type": "string",
+      "minLength": 2,
+      "description": "A literal string, matched case-insensitively unless match.case_sensitive is set. No regex."
+    },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "source": {
+      "type": "string",
+      "description": "Kit section reference in the form kit-lint validates: file plus § and the quoted section name.",
+      "pattern": "^(brand|reference|strategy)/[a-z0-9-]+\\.md § \"[^\"]+\"$"
+    },
+    "hold_source": {
+      "type": "string",
+      "description": "Live-holds arrow form, as kit-lint validates it.",
+      "pattern": "^brand/live-holds\\.md → \"[^\"]+\"$"
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inflect": { "type": "boolean", "description": "Also match -s, -ed, -ing, -er forms. Default false." },
+        "case_sensitive": { "type": "boolean", "description": "Default false." },
+        "whole_word": { "type": "boolean", "description": "Default true." }
+      }
+    }
+  }
+}

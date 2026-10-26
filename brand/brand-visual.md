@@ -2,7 +2,7 @@
 
 <!--
   client:        [Client Name]
-  version:       2.0
+  version:       2.1
   last_updated:  YYYY-MM-DD
   review_cadence: per-rebrand   # rebuilt when the design system changes; event-driven, not date-checked
   maintained_by: [Your Name / Team]
@@ -52,12 +52,35 @@ production uses — the full palette stays in the canonical source.
 
 ### Palette
 
-| Name | Hex | Usage |
-|------|-----|-------|
-| [e.g. "Primary"] | `#1A2B4A` | [e.g. "H1 text, accents, chart series 1"] |
-| [e.g. "Secondary"] | `#00B4A6` | [e.g. "Highlights, links, chart series 2"] |
-| [e.g. "Neutral"] | `#F2F4F6` | [e.g. "Panel and callout backgrounds"] |
-| [e.g. "Text"] | `#1A1A1A` | [e.g. "Body text"] |
+One colour per row. **Token** is the stable name tools use (`color.primary`,
+`color.text`, `color.chart-1`): lower case, dot-separated, unchanged when the
+display name or the hex changes. A chart or accent set gets one row per
+colour, not one row listing several.
+
+| Name | Token | Hex | Usage |
+|------|-------|-----|-------|
+| [e.g. "Primary"] | `color.primary` | `#1A2B4A` | [e.g. "H1 text, accents, chart series 1"] |
+| [e.g. "Secondary"] | `color.secondary` | `#00B4A6` | [e.g. "Highlights, links, chart series 2"] |
+| [e.g. "Neutral"] | `color.surface` | `#F2F4F6` | [e.g. "Panel and callout backgrounds"] |
+| [e.g. "Text"] | `color.text` | `#1A1A1A` | [e.g. "Body text"] |
+
+### Colour pairings
+
+Which colour may sit on which, and for what. The rules-file check computes the
+WCAG 2.x contrast ratio of every pairing listed here and fails a pairing whose
+**Use** the ratio does not support: `body-text` needs 4.5:1, `large-text`
+(18pt, or 14pt bold, and up) and `graphics` (icons, chart marks, UI
+boundaries) need 3:1. `never` records a pairing the guidelines rule out; it is
+listed so tools avoid it, not tested. Name each colour by its token. Source is
+where the pairing comes from: the client's guidelines where they state it,
+otherwise *Derived* with the reason. Never write the ratio here; the check
+computes it.
+
+| Foreground | Background | Use | Source |
+|------------|------------|-----|--------|
+| `color.text` | `color.surface` | `body-text` | [e.g. "Guidelines p.12" / "*Derived:* body text on callout panels"] |
+| `color.surface` | `color.primary` | `body-text` | [e.g. "*Derived:* reversed text on primary-colour fields"] |
+| `color.secondary` | `color.surface` | `never` | [e.g. "*Derived:* too light on light panels for text or chart marks"] |
 
 ### Type
 

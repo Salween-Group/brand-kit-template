@@ -225,12 +225,34 @@
         "required": ["name", "hex"],
         "properties": {
           "name": { "type": "string" },
+          "token": {
+            "type": "string",
+            "description": "Stable tool-facing name from the palette table's Token column, e.g. color.primary. Unchanged when the display name or hex changes.",
+            "pattern": "^color\\.[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*$"
+          },
           "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
           "usage": { "type": "string" }
         }
       }
     },
     "palette_source": { "$ref": "#/$defs/source" },
+
+    "pairings": {
+      "description": "Foreground/background pairings from brand-visual.md § \"Colour pairings\". The rules-file check computes each pairing's WCAG 2.x contrast ratio and fails one whose use the ratio does not support (body-text 4.5:1; large-text and graphics 3:1). fg and bg name palette entries by token.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["fg", "bg", "use"],
+        "properties": {
+          "fg": { "type": "string", "pattern": "^color\\." },
+          "bg": { "type": "string", "pattern": "^color\\." },
+          "use": { "enum": ["body-text", "large-text", "graphics", "never"] },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "pairings_source": { "$ref": "#/$defs/source" },
 
     "judgement_only": {
       "description": "Rules no script can test. Listing them keeps coverage visible: every rule-bearing section ends up either extracted above or named here.",

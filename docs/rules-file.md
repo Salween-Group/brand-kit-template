@@ -46,7 +46,8 @@ still gives tools exact values.
 | `holds` | `brand/live-holds.md` | FAIL on a `block` literal inside the hold's scope until `review_by`, then flag for renewal. |
 | `claims` | `reference/evidence.md` § "Proof points" | Usable wording to match against; retired and gap rows to catch. |
 | `roster` | `brand-context.md` § "Approved spokespeople" | Name and title check; an empty roster means nobody may be quoted as the brand. |
-| `palette` | `brand-visual.md` production palette | Hex values for generators and contrast checks. |
+| `palette` | `brand-visual.md` § "Palette" | Hex values and tokens for generators. One entry per colour. |
+| `pairings` | `brand-visual.md` § "Colour pairings" | Foreground/background pairs by token, each with its permitted use. The rules check computes the contrast ratio of each. |
 | `judgement_only` | Every rule-bearing section not extracted above | Nothing mechanical: the list tells the model tier what it must cover, and makes the coverage visible. |
 
 Every rule carries a `source` pointer in the form kit lint already validates
@@ -104,11 +105,43 @@ PR. A kit without `brand/rules.yml` skips it. It fails when:
   by prefix, HTML comments ignored);
 - a literal does not appear in the section its `source` names (the generator
   invented it);
-- `generated.kit` does not name the repository the file is in.
+- `generated.kit` does not name the repository the file is in;
+- a palette hex or token does not appear in `palette_source`, or the palette
+  carries two or more of this template's example values (`#1A2B4A`,
+  `#00B4A6`, `#F2F4F6`, `#1A1A1A`): placeholders extracted as if they were the
+  client's colours;
+- a pairing names a token the palette doesn't define, or its two tokens don't
+  appear in `pairings_source`;
+- a pairing's contrast ratio is below what its use needs.
+
+### Contrast
+
+The ratio is WCAG 2.x: relative luminance from the sRGB hex values, then
+(lighter + 0.05) / (darker + 0.05), compared unrounded. The thresholds are the
+WCAG AA minimums:
+
+| Use | Minimum | Covers |
+|---|---|---|
+| `body-text` | 4.5:1 | Running text and anything below large text |
+| `large-text` | 3:1 | 18pt and up, or 14pt bold and up |
+| `graphics` | 3:1 | Icons, chart marks, UI boundaries, focus indicators |
+| `never` | — | Ruled out; listed so tools avoid it, not tested |
+
+The ratio is always computed by the check, never read from prose. Where a
+client's own guidelines declare a pairing the ratio does not support, the check
+still fails: the generator records the pairing as the guidelines state it and
+the account lead rules on it (narrow the use, add a darker variant, or accept
+the guideline in writing and record the pairing as `never` for text). The
+check does not test colours against each other beyond the pairings listed.
+
+A kit's `brand-visual.md` that still carries two or more of the template's
+example hex values gets a warning even when the rules file has no palette: it
+means the production palette was never filled.
 
 A stamped `source_commit` missing from the repository's history is a warning
 only, because a squash merge orphans it. On this template, which carries no
-rules file, the workflow checks that the schema is itself a valid JSON Schema.
+rules file, the workflow checks that the schema is itself a valid JSON Schema
+and runs the contrast function against reference values.
 
 Running `reference/eval-cases.md` through the mechanical checks with the rules
 file as input, and failing on a score drop, comes with the brand-gate change

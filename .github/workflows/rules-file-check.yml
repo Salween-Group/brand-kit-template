@@ -19,17 +19,22 @@ name: Rules file check
 #      ignored. Live-holds pointers use the arrow form.
 #   4. Literal provenance. A literal the file carries (banned and vocabulary
 #      terms, retired phrases, protected-term variants, hold literals,
-#      boilerplate text, claim wording, palette hex values) does not appear in
-#      the section its `source` names. This is what stops a generator
-#      inventing a rule.
+#      boilerplate text, claim wording, palette hex values and tokens,
+#      pairing tokens) does not appear in the section its `source` names.
+#      This is what stops a generator inventing a rule.
+#   5. Contrast. A pairing's WCAG 2.x contrast ratio is below what its
+#      declared use needs (body-text 4.5:1; large-text and graphics 3:1), or
+#      a pairing names a token the palette doesn't define. The palette also
+#      fails when it carries two or more of the template's example hex values.
 #
 # Also checked: generated.kit names this repository. A stamped source commit
 # that is not in this repository's history is a warning, not a failure
-# (squash merges legitimately orphan it).
+# (squash merges legitimately orphan it). A brand-visual.md still carrying the
+# template's example palette is a warning.
 #
 # Kits without brand/rules.yml skip the check: the file is optional until the
 # generator ships. On the template, which carries no rules file, the check
-# validates the schema itself instead.
+# validates the schema itself and self-tests the contrast function instead.
 
 on:
   push:
@@ -102,6 +107,22 @@ jobs:
           def err(msg):
               errors.append(msg)
 
+          # WCAG 2.x contrast. Thresholds are the AA minimums, compared unrounded.
+          def luminance(hexval):
+              h = hexval.lstrip("#")
+              chans = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+              chans = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in chans]
+              return 0.2126 * chans[0] + 0.7152 * chans[1] + 0.0722 * chans[2]
+
+          def contrast(a, b):
+              hi, lo = sorted((luminance(a), luminance(b)), reverse=True)
+              return (hi + 0.05) / (lo + 0.05)
+
+          MIN_RATIO = {"body-text": 4.5, "large-text": 3.0, "graphics": 3.0}
+          # The template's own example palette: two or more of these in a kit
+          # means placeholders were taken for the client's colours.
+          TEMPLATE_EXAMPLE_HEX = {"#1a2b4a", "#00b4a6", "#f2f4f6", "#1a1a1a"}
+
           # On the template: the schema itself must be a valid JSON Schema.
           if template_mode:
               try:
@@ -109,6 +130,16 @@ jobs:
                   print("Schema is a valid JSON Schema (draft 2020-12).")
               except jsonschema.SchemaError as e:
                   err("docs/rules.schema.json is not a valid JSON Schema: %s" % e.message)
+              # Self-test the contrast function against reference values,
+              # including both sides of each threshold.
+              for fg, bg, want in (("#FFFFFF", "#000000", 21.0), ("#767676", "#FFFFFF", 4.5422),
+                                   ("#777777", "#FFFFFF", 4.4781), ("#949494", "#FFFFFF", 3.0335),
+                                   ("#959595", "#FFFFFF", 2.9953)):
+                  got = contrast(fg, bg)
+                  if abs(got - want) > 0.0005:
+                      err("contrast self-test: %s on %s gave %.4f, expected %.4f" % (fg, bg, got, want))
+              if not errors:
+                  print("Contrast self-test passed.")
               if not os.path.exists(RULES):
                   for m in errors:
                       print("::error file=docs/rules.schema.json::" + m)
@@ -243,6 +274,7 @@ jobs:
 
           walk(rules, "")
 
+          tokens = {}
           if rules.get("palette"):
               ps = rules.get("palette_source")
               body = resolve(ps) if ps else None
@@ -253,6 +285,62 @@ jobs:
                       checked += 1
                       if c["hex"].lower() not in body.lower():
                           err("palette: %s (%s) does not appear in %s" % (c["hex"], c["name"], ps))
+                      if "token" in c:
+                          checked += 1
+                          if c["token"] not in body:
+                              err("palette: token %s (%s) does not appear in %s" % (c["token"], c["name"], ps))
+                          if c["token"] in tokens:
+                              err("palette: token %s is defined twice" % c["token"])
+                          tokens[c["token"]] = c["hex"]
+              examples = sorted({c["hex"].lower() for c in rules["palette"]} & TEMPLATE_EXAMPLE_HEX)
+              if len(examples) >= 2:
+                  err("palette carries the template's example values (%s): the production palette "
+                      "was never filled; remove them from the rules file" % ", ".join(examples))
+
+          # 5. Contrast
+          if rules.get("pairings"):
+              qs = rules.get("pairings_source")
+              body = resolve(qs) if qs else None
+              if body is None:
+                  err("pairings_source is missing or does not resolve to a section: %s" % qs)
+              # Provenance is per row: foreground, background and use together,
+              # so a pairing the markdown never declared can't pass on tokens
+              # that happen to appear in other rows.
+              declared = set()
+              for line in (body or "").split("\n"):
+                  cells = [c.strip().strip("`").strip() for c in line.strip().strip("|").split("|")]
+                  if len(cells) >= 3:
+                      declared.add((cells[0], cells[1], cells[2]))
+              for i, p in enumerate(rules["pairings"]):
+                  where = "pairings[%d] (%s on %s)" % (i, p["fg"], p["bg"])
+                  undefined = [t for t in (p["fg"], p["bg"]) if t not in tokens]
+                  if undefined:
+                      err("%s: token not defined in the palette: %s" % (where, ", ".join(undefined)))
+                      continue
+                  if body is not None:
+                      checked += 1
+                      if (p["fg"], p["bg"], p["use"]) not in declared:
+                          err("%s: no row in %s declares %s on %s as %s"
+                              % (where, qs, p["fg"], p["bg"], p["use"]))
+                  if p["use"] == "never":
+                      continue
+                  checked += 1
+                  ratio = contrast(tokens[p["fg"]], tokens[p["bg"]])
+                  need = MIN_RATIO[p["use"]]
+                  if ratio < need:
+                      err("%s: contrast %.2f:1 is below the %.1f:1 that %s needs. Narrow the use, "
+                          "or record the pairing as never and take it to the account lead"
+                          % (where, ratio, need, p["use"]))
+                  else:
+                      print("%s: %.2f:1, %s OK" % (where, ratio, p["use"]))
+
+          # An unfilled production palette in the markdown, whatever the rules file says.
+          if not template_mode and os.path.exists("brand/brand-visual.md"):
+              vis = re.sub(r"<!--.*?-->", "", read("brand/brand-visual.md").decode("utf-8"), flags=re.S).lower()
+              left = sorted(h for h in TEMPLATE_EXAMPLE_HEX if h in vis)
+              if len(left) >= 2:
+                  warnings.append("brand/brand-visual.md still carries the template's example palette (%s): "
+                                  "treat this kit as having no production palette" % ", ".join(left))
 
           for w in warnings:
               print("::warning file=%s::%s" % (RULES, w))

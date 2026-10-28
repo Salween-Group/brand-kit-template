@@ -22,6 +22,13 @@ name: Sync version reconcile
 # touched. Files with a non-numeric version (e.g. "NOT YET BUILT") keep it.
 # The voice-guardian pack and the CHANGELOG body are never edited.
 #
+# Header edits change the bytes of files that brand/rules.yml hashes, so a
+# bump would leave the rules file stale on main, and the rules-file check
+# would fail on the next push. When the stamp was fresh before the bump and a
+# bumped file is one of generated.sources, the same commit restamps
+# generated.source_hash (same hash as rules-file-check.yml). A stamp that was
+# already stale is left alone, so a real staleness still fails the check.
+#
 # The commit is pushed straight to main as github-actions[bot]. Commits made
 # with GITHUB_TOKEN do not start other workflows, so pack-stale-on-main does
 # not re-run on it; that is fine, because the sync merge itself already
@@ -93,6 +100,10 @@ jobs:
             echo "date=$(TZ=Asia/Singapore date -d "$merged_at" +%F)"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Install PyYAML
+        if: steps.pr.outputs.skip == 'false'
+        run: python3 -m pip install --quiet --disable-pip-version-check PyYAML==6.0.3
+
       - name: Bump headers and settle the CHANGELOG heading
         if: steps.pr.outputs.skip == 'false'
         shell: bash
@@ -104,7 +115,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import os, re, subprocess, sys
+          import hashlib, os, re, subprocess, sys
+          import yaml
 
           pr = os.environ["PR_NUMBER"]
           base = os.environ["BASE_SHA"]
@@ -138,6 +150,30 @@ jobs:
                   return None
               m = VERSION.search(text, span[0], span[1])
               return f"{m.group(2)}.{m.group(3)}" if m else None
+
+          RULES = "brand/rules.yml"
+          HASH_LINE = re.compile(r'''^(\s*source_hash:\s*)(["']?)sha256:[0-9a-f]{64}\2(\s*)$''', re.M)
+
+          def source_hash(sources):
+              # Must match the staleness hash in rules-file-check.yml.
+              h = hashlib.sha256()
+              for p in sources:
+                  with open(p, "rb") as f:
+                      h.update(p.encode("utf-8") + b"\n" + f.read().replace(b"\r\n", b"\n") + b"\n")
+              return "sha256:" + h.hexdigest()
+
+          # Read the stamp before any header is touched.
+          stamp_sources, stamp_fresh = [], False
+          if os.path.exists(RULES):
+              try:
+                  gen = yaml.safe_load(open(RULES, encoding="utf-8"))["generated"]
+                  stamp_sources = list(gen["sources"])
+                  stamp_fresh = (all(os.path.exists(p) for p in stamp_sources)
+                                 and source_hash(stamp_sources) == gen["source_hash"])
+              except Exception as e:
+                  print(f"::warning::{RULES}: could not read the stamp ({e}) — it will not be restamped")
+              if stamp_sources and not stamp_fresh:
+                  print(f"::warning::{RULES} was already stale before the header bump — left for the rules-file check to report")
 
           mb = git("merge-base", base, head).strip()
           changed = [p for p in git("diff", "--name-only", f"{mb}...{head}").split()
@@ -175,6 +211,19 @@ jobs:
               if new != block:
                   open(path, "w", encoding="utf-8", newline="\n").write(text[:s] + new + text[e:])
                   touched.append(path)
+
+          # Restamp the rules file when the header edits alone made it stale.
+          if stamp_fresh and set(touched) & set(stamp_sources):
+              rules_text = open(RULES, encoding="utf-8").read()
+              if len(HASH_LINE.findall(rules_text)) == 1:
+                  want = source_hash(stamp_sources)
+                  rules_text = HASH_LINE.sub(lambda m: f"{m.group(1)}{m.group(2)}{want}{m.group(2)}{m.group(3)}",
+                                             rules_text)
+                  open(RULES, "w", encoding="utf-8", newline="\n").write(rules_text)
+                  touched.append(RULES)
+                  print(f"{RULES}: restamped source_hash after the header bump ({want})")
+              else:
+                  print(f"::warning::{RULES}: source_hash line not found exactly once — not restamped")
 
           # The CHANGELOG entry this PR added: first "### " heading present on
           # the PR head but not at the merge base.

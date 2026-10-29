@@ -136,7 +136,7 @@ project chat and crowds out the content.
   Source, with `pass | fail` and `deterministic | judgement` vocabularies) — its
   Tests pointers ride the same pointer checks as everything else, so a case
   pointing at a lifted hold or renamed section fails the build until the case is
-  updated with the rule. History and build products
+  updated with the rule. A design-system link in `brand/brand-visual.md` § "Visual source" must sit in a row labelled exactly "Design system (working token set)", one row, holding a claude.ai artifact link or a bracketed placeholder, because that label is how brand-sync finds it. History and build products
   (`brand/CHANGELOG.md`, the voice-guardian pack) are exempt from the pointer
   check. On this template, placeholder values downgrade to warnings.
 - **Version headers settle themselves after a sync.** The brand-sync skills never bump

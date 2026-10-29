@@ -2,7 +2,7 @@
 
 <!--
   client:        [Client Name]
-  version:       2.1
+  version:       2.2
   last_updated:  YYYY-MM-DD
   review_cadence: per-rebrand   # rebuilt when the design system changes; event-driven, not date-checked
   maintained_by: [Your Name / Team]
@@ -29,10 +29,18 @@ duplicate it does not.
 | Where it lives | [e.g. "Shared drive link / DAM URL / repo path — wherever the team actually fetches it"] |
 | State | [e.g. "current" / "rebrand in progress, new system expected [Month Year] — values below will be re-cut then" / "awaiting guidelines from the client — nothing below is real yet"] |
 | Owner / contact | [e.g. "Client marketing lead / our design lead"] |
+| Design system (working token set) | [e.g. "none yet" / a claude.ai artifact link to the design system built from the source above, with what it holds and when it must be re-cut. brand-sync checks it against this file whenever this file changes; keep this label exactly, it is how the check finds the link] |
 
 > If the client publishes **design tokens** (the W3C DTCG format is the common
 > shape), point at the token set here and treat § "Production palette & type"
 > as a derived excerpt, never a competing source.
+>
+> Where we build a **design system** from the guidelines ourselves, link it in
+> the "Design system (working token set)" row. It is the reference production
+> builds from; this file stays the pointer, the generator excerpt and the
+> decisions log. The guidelines stay canonical: where the design system
+> disagrees, it is corrected. When this file changes a visual rule, update the
+> design system in the same pass.
 
 > **Working-copy convention:** the client's guidelines file (usually a PPT or
 > PDF) normally lives in the team's SharePoint. Point "Where it lives" at the

@@ -8,6 +8,15 @@ name: Retired language check
 # retired phrases verbatim to enforce them wherever it is deployed), and
 # reference/eval-cases.md (fail cases quote retired phrases verbatim — that is
 # what they test; the file's own conventions forbid confidential material).
+#
+# Opt-in exemption by marker: a client-facing reference document that lists
+# retired phrases on purpose (a "what we no longer say" page in a lite brand
+# guide, say) is exempt when its leading metadata comment (the first <!-- -->
+# block, preceded only by blank lines and headings) carries the line
+#   retired_language_check: exempt   # <why this file must quote retired phrases>
+# Kits use the marker instead of adding paths to the list below, so the
+# workflow stays identical to the template. The core files every content chat
+# loads (CORE below) may never carry it: the step fails if one does.
 
 on:
   push:
@@ -53,14 +62,48 @@ jobs:
             exit 0
           fi
 
-          # Every tracked markdown file except the list itself and the changelog.
-          mapfile -t files < <(git ls-files '*.md' \
+          # Core files are always checked: the exemption marker is refused on them.
+          CORE=(brand/brand-context.md brand/brand-voice.md brand/brand-visual.md
+                brand/live-holds.md strategy/positioning.md strategy/message-house.md
+                project-instructions.md reference/evidence.md
+                reference/approved-copy-samples.md)
+
+          # True when the file's leading metadata comment carries the marker.
+          has_marker() {
+            awk '
+              !open {
+                if ($0 ~ /^[[:space:]]*$/ || $0 ~ /^#/) next
+                if ($0 !~ /^[[:space:]]*<!--/) exit
+                open = 1
+              }
+              /^[[:space:]]*retired_language_check:[[:space:]]*exempt[[:space:]]*(#.*)?$/ { found = 1 }
+              /-->/ { exit }
+              END { exit !found }
+            ' "$1"
+          }
+
+          fail=0
+
+          # Every tracked markdown file except the fixed exemptions and any
+          # non-core file that opts out with the marker.
+          files=()
+          while IFS= read -r f; do
+            if has_marker "$f"; then
+              if [[ " ${CORE[*]} " == *" $f "* ]]; then
+                echo "::error file=$f::Core kit file may not carry retired_language_check: exempt"
+                fail=1
+              else
+                echo "Exempt by marker: $f"
+                continue
+              fi
+            fi
+            files+=("$f")
+          done < <(git ls-files '*.md' \
             | grep -v -x 'brand/retired-language.md' \
             | grep -v -x 'brand/CHANGELOG.md' \
             | grep -v -x 'reference/voice-guardian-pack.md' \
             | grep -v -x 'reference/eval-cases.md')
 
-          fail=0
           while IFS= read -r phrase; do
             [ -z "$phrase" ] && continue
             hits=$(grep -Fin -- "$phrase" "${files[@]}" || true)

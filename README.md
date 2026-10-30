@@ -60,7 +60,26 @@ project chat and crowds out the content.
 - **Superseded copy is machine-checked.** When a hero, claim, or vocabulary ruling is
   replaced, the dead phrase goes into `brand/retired-language.md` the same day. CI
   (`.github/workflows/retired-language-check.yml`) greps the kit on every push and PR
-  and fails the build if a retired phrase reappears.
+  and fails the build if a retired phrase reappears. A client-facing reference
+  document that lists retired phrases on purpose (a "what we no longer say" page
+  in a lite brand guide, say) opts out with one line in its leading metadata
+  comment, with the reason after the `#`:
+
+  ```markdown
+  # Quick Brand Guide
+
+  <!--
+    last_updated: YYYY-MM-DD
+    retired_language_check: exempt   # lists retired phrases so readers can spot them
+  -->
+  ```
+
+  The marker must sit in the first `<!-- -->` block, before any body text. Use it
+  instead of editing the workflow's exemption list, so the workflow stays
+  identical to the template. The core files (`brand/brand-context.md`,
+  `brand-voice.md`, `brand-visual.md`, `live-holds.md`, the `strategy/` files,
+  `project-instructions.md`, `reference/evidence.md` and
+  `approved-copy-samples.md`) can't opt out: the check fails if one carries the marker.
 - **Generated deliverables are build products.** The markdown is the source of truth;
   branded .docx/PDF versions are regenerated from it, never edited directly.
 - **The voice-guardian pack is a build product too.** An optional

@@ -1,7 +1,7 @@
 name: Sync version reconcile
 
 # Settles version headers after a sync PR merges. The brand-sync skills
-# (brand-sync, brand-sync-manual, brand-sync-clickup) deliberately never bump
+# (brand-sync, which now covers ClickUp too, and brand-sync-manual) deliberately never bump
 # version headers on their branches: every recommendation is a droppable
 # commit, so the version is only known once the account team has chosen what
 # to merge. That left a manual follow-up PR after every accepted sync, which

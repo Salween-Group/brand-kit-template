@@ -262,9 +262,13 @@ brand-kit-template/
 │       ├── pack-freshness-check.yml
 │       ├── pack-stale-on-main.yml
 │       ├── clickup-issue-sync.yml
-│       └── sync-version-reconcile.yml
+│       ├── sync-version-reconcile.yml
+│       ├── rules-file-check.yml
+│       └── instruction-pattern-check.yml
 ├── docs/
-│   └── voice-guardian-pack.md
+│   ├── voice-guardian-pack.md
+│   ├── rules-file.md
+│   └── rules.schema.json
 ├── project-instructions.md
 ├── README.md
 └── LICENSE

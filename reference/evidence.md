@@ -32,7 +32,8 @@
 
 ## Proof points (claims about the client)
 
-<!-- Status: usable | gap-to-close | retired -->
+<!-- Status: usable | on hold (see live-holds) | gap-to-close | retired
+     An "on hold (see live-holds)" row must point at its hold in brand/live-holds.md. -->
 
 | Claim (approved wording) | Status | Evidence / source | As of | Notes / where usable |
 |---|---|---|---|---|

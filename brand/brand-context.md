@@ -23,6 +23,28 @@
       planable_workspace: [Client Name]     # Planable workspace name; defaults to the client name when absent
       blog_path: [www.client.com/blog/]     # URL prefix identifying articles among GA4 landing pages; without it the article half of a samples refresh skips cleanly
       published_floor: [YYYY-MM-DD]         # optional; never sample content published before this date
+  news_watch:                    # Consumed by the client-news-roundup skill. Optional: add it only when the client is enrolled in the roundup. Field docs: that skill's references/news-watch-block.md.
+    schema:              1
+    client_name:         [Client Name]                       # the only name the client edition uses
+    internal_names:      [Internal shorthand]                # optional; never in the client edition
+    target_institutions: [Institution One (Acronym), Institution Two]   # buyers, regulators, bellwethers; acronyms the news uses go in ()
+    target_regions:      [Region One, Region Two]            # optional
+    competitors:         [Vendor One (Vendor One Inc); Vendor Two (Vendor Two Group)]   # optional; from Competitive Landscape; semicolon-separated, a specific alias in ()
+    competitor_section:  client                              # client: competitor moves go to the client too; internal: internal edition only
+    topics_in:           [topic one, topic two]              # always-relevant keywords; spell out acronyms that collide
+    topics_out:          [excluded topic]                    # optional; never a reason to act
+    sources_primary:     [regulator.example, standards-body.example]   # official sources for the restricted search pass; bare domains
+    sources_excluded:    [low-quality.example]               # optional
+    events:              [Event Name YYYY-MM-DD..YYYY-MM-DD] # optional; semicolon-separated
+    lead_pillars:        [1, 2]                              # optional; message-house pillars a why-it-matters line may lead on (default: all)
+    anchors:             [Key message one; Key message two]  # only while the message house has no pillars: the operative key messages, semicolon-separated
+    never_claim:         [phrase the kit rules out]          # optional; the gate fails the client edition on any
+    framing_rules:       [Short framing rule one; Short framing rule two]   # optional; from Sensitive Topics & Guardrails
+    paywalled_sources:   [Paywalled Publication]             # optional; named in the known-gap line
+    cadence:             fortnightly                         # weekly, fortnightly or monthly
+    lookback_days:       14
+    delivery_channel:    teams                               # teams, clickup or both; teams posts to the sync block's teams_chat
+    client_release:      curated                             # the account team reviews the client edition before forwarding it
 -->
 
 ## 1. Company Overview

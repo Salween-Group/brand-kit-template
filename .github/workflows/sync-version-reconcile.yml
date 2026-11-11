@@ -34,6 +34,19 @@ name: Sync version reconcile
 # not re-run on it; that is fine, because the sync merge itself already
 # raised the pack-stale signal and the regeneration builds from main HEAD.
 # Idempotent: re-running against an already-reconciled main changes nothing.
+#
+# The client export is the exception. A kit with export/export.yml publishes
+# its bundles from .github/workflows/client-export.yml on every push to main,
+# and the reconcile commit edits files the export reads (brand-context.md,
+# rules.yml). Left alone, the bot push never starts that export, so the
+# server keeps serving the build from before the reconcile until the next
+# merge. After a successful push this workflow therefore dispatches
+# client-export.yml on main (workflow_dispatch is the one event a
+# GITHUB_TOKEN may still start, hence `actions: write`). When the kit's
+# client-export.yml declares a `publish` input, the dispatch sets it, so the
+# run publishes as a push would; an older client-export.yml without the
+# input gets a plain dispatch, which is a dry run. Kits without
+# export/export.yml are not enrolled and dispatch nothing.
 
 on:
   pull_request:
@@ -47,6 +60,7 @@ on:
 permissions:
   contents: write
   pull-requests: read
+  actions: write   # dispatch client-export.yml after the push (enrolled kits only)
 
 concurrency:
   group: sync-version-reconcile
@@ -260,6 +274,7 @@ jobs:
           PY
 
       - name: Commit to main
+        id: commit
         if: steps.pr.outputs.skip == 'false'
         shell: bash
         env:
@@ -276,6 +291,7 @@ jobs:
             -m "Automated by .github/workflows/sync-version-reconcile.yml."
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
+              echo "pushed=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
             echo "Push rejected (attempt $attempt) — rebasing on origin/main."
@@ -283,3 +299,38 @@ jobs:
           done
           echo "::error::Could not push the reconcile commit after 3 attempts."
           exit 1
+
+      # A GITHUB_TOKEN push starts no workflow, so the client export would skip
+      # the reconcile commit. Dispatch it on main instead (see the header).
+      - name: Run the client export for the reconcile commit
+        if: steps.commit.outputs.pushed == 'true'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          WF=.github/workflows/client-export.yml
+          if [ ! -f export/export.yml ]; then
+            echo "No export/export.yml — kit not enrolled in the client export, nothing to dispatch."
+            exit 0
+          fi
+          if [ ! -f "$WF" ]; then
+            echo "::warning::export/export.yml is present but $WF is not — the reconcile commit was not exported."
+            exit 0
+          fi
+          args=(--repo "$REPO" --ref main)
+          if python3 - "$WF" <<'PY'
+          import sys, yaml
+          wf = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+          on = wf.get("on", wf.get(True)) or {}   # PyYAML reads a bare `on:` key as True
+          wd = on.get("workflow_dispatch") if isinstance(on, dict) else None
+          sys.exit(0 if isinstance(wd, dict) and "publish" in (wd.get("inputs") or {}) else 1)
+          PY
+          then
+            args+=(-f publish=true)
+          else
+            echo "::warning::$WF has no 'publish' dispatch input, so this run is a dry run and the reconcile commit is not published until the next push to main."
+          fi
+          gh workflow run client-export.yml "${args[@]}"
+          echo "Dispatched client-export.yml on main: ${args[*]}" >> "$GITHUB_STEP_SUMMARY"

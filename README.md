@@ -166,7 +166,10 @@ project chat and crowds out the content.
   was dropped keeps its version), sets `last_updated` to the merge date, and rewrites the
   new `brand/CHANGELOG.md` entry's `(proposed …)` heading to record the merge and the
   real bumps — committed straight to main in seconds, so a voice-guardian pack
-  regeneration triggered by the same merge always builds from the settled headers. It
+  regeneration triggered by the same merge always builds from the settled headers. A
+  push made with the workflow token starts no other workflow, so on a kit that carries
+  `export/export.yml` it then dispatches `client-export.yml` on main itself, and the
+  settled headers are exported rather than waiting for the next merge. It
   is idempotent and can be re-run by hand for a given PR; on this template it has
   nothing to act on.
 - **Account-team issues mirror into ClickUp — opt-in by label.** Most kit issues are
